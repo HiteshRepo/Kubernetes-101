@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: metadata-env
+spec:
+  containers:
+  - name: metdata
+    image: sunitparekh/metadata:v1.0
+    ports:
+    - containerPort: 8080
+    env:
+      - name: info.app.version
+        value: "2.0.0"

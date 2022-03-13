@@ -1,0 +1,8 @@
+fileignoreconfig:
+- filename: Ex-2-Pods/metadata-pod-with-env.yaml
+  checksum: 165c8e4ceaed61fb6996f33630616a210687e6c07aad802d0796616d201abfea
+- filename: learnings.md
+  checksum: 5317cf8e15dbb4d063f422ba30d6d9e2bfd0c23ea253ea49cc90f0ef5d21f5d9
+- filename: Readme.md
+  checksum: a047209d8788dd65352f0849b2580a7fec7e86b79560be840cd67289e40a5b30
+version: ""
