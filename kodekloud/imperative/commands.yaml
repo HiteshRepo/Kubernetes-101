@@ -1,0 +1,123 @@
+# kubectl run nginx --image=nginx:alpine  --dry-run=client -o yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: nginx
+  name: nginx-pod
+spec:
+  containers:
+    - image: nginx:alpine
+      name: nginx-pod
+---
+# kubectl run redis --image=redis:alpine --labels=tier=db --dry-run=client -o yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    tier: db
+  name: redis
+spec:
+  containers:
+  - image: redis:alpine
+    name: redis
+---
+# kubectl expose pod redis --name=redis-service --port 6379 --target-port 6379 --dry-run=client -o yaml
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    tier: db
+  name: redis-service
+spec:
+  ports:
+    - port: 6379
+      protocol: TCP
+      targetPort: 6379
+  selector:
+    tier: db
+---
+# kubectl create deployment webapp --image=kodekloud/webapp-color
+# kubectl scale deployment --replicas=3 webapp
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: webapp
+  name: webapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: webapp
+  template:
+    metadata:
+      labels:
+        app: webapp
+    spec:
+      containers:
+        - image: kodekloud/webapp-color
+          name: webapp-color
+---
+# kubectl run custom-nginx --image=nginx --port=8080 --dry-run=client -o yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: custom-nginx
+  name: custom-nginx
+spec:
+  containers:
+    - image: nginx
+      name: custom-nginx
+      ports:
+        - containerPort: 8080
+---
+# kubectl create deployment redis-deploy --namespace=dev-ns --image=redis --dry-run=client -o yaml
+# kubectl scale deployment --replicas=2 redis-deploy --namespace=dev-ns
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: redis-deploy
+  name: redis-deploy
+  namespace: dev-ns
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-deploy
+  template:
+    metadata:
+      labels:
+        app: redis-deploy
+    spec:
+      containers:
+        - image: redis
+          name: redis
+---
+# kubectl run httpd --image=httpd:alpine --port 80 --expose --dry-run=client -o yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpd
+spec:
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 80
+  selector:
+    run: httpd
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: httpd
+  name: httpd
+spec:
+  containers:
+    - image: httpd:alpine
+      name: httpd
+      ports:
+        - containerPort: 80

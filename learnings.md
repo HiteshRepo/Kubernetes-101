@@ -10,7 +10,7 @@
     3. Kube proxy - manage n/w b/w worker nodes, Assigns IP to eat pod with the help of CNI provider
     4. Pods
 3. Flow
-    1. Client sends a request - To keep infra in a particular state 
+    1. Client sends a request - To keep infra in a particular state
     2. Api server receives request and save it to Etcd
     3. Ctrl manager keeps looking at Etcd to notice any differences b/w current state and desired state
     4. Once decision has been made on what needs to be changed in pods, scheduler assign actual pod configuration to worker node
@@ -56,9 +56,17 @@
 * kubectl rollout history deployment/<deploy-name>
 * kubectl rollout undo deployment/<deploy-name> --to-revision=1
 * kubectl cordon node-name -> no further pod will be scheduled here -> STATUS: SchedulingDisabled
+* kubectl replace -f <file name> -> Replaces existing configuration with latest, works same as apply
+* kubectl scale --replicas=6 <type> <name>
 * minikube ip
 * minikube ssh - to connect to minikube
 * eval $(minikube docker-env) - to make docker point to minikube docker context
+
+## Formatting o/p
+1. -o json -> in json formatted API object
+2. -o name -> only name of the resource
+3. -o wide -> additional info in plain-text format
+4. -o yaml -> YAML formatted API object
 
 ## Minikube Objects
 1. Persistent entity in K8s system and rep state of system
@@ -73,10 +81,15 @@
 8. ConfigMap and Secrets
 9. Object descriptor YAML - to communicate our desired state
 10. Parts of object descriptor file:
-    1. apiVersion, 
-    2. kind [of object], 
+    1. apiVersion,
+    2. kind [of object],
     3. metadata [info about object, name - unique identifier, labels]
     4. Spec - actual specification of the object to be created
+11. Replication controller (same purpose as Replica Set) -
+    1. Replica set is recommended,
+    2. Replication controller is an older concept
+    3. Replication controller does not have 'selector' under spec, but Replica Set has
+    4. Selector helps Replica Set to attach any already running pods to itself or any other pods that can be started individually in future
 
 ## Pods
 1. Smallest unit
@@ -88,7 +101,7 @@
     1. Network stack
     2. Volume mounts
     3. Kernel namespace
-7. High level Pod lifecycle - 
+7. High level Pod lifecycle -
     1. Kubectl -> API server
     2. API server -> Etcd
     3. Scheduler reads from Etcd -> Node [kubelet/worker]
@@ -141,7 +154,7 @@
     12. Distributes pods evenly across nodes
     13. Deleting replica set -> deletes associated pods as well
 
-## Health check probes for containers: 
+## Health check probes for containers:
 These diagnostics are performed periodically - in template section of replicaset/deployments - httpGet [path] /exec [command] - initialDelaySeconds and periodSeconds
 1. readinessProbe - indicates if container is ready to serve requests, halts sending new requests until probe succeed - in template section of replicaset/deployments - httpGet/exec - initialDelaySeconds and periodSeconds
 2. livenessProbe - indicates whether the container is running healthy, if fails, declares container unhealthy and restarts container
@@ -155,7 +168,7 @@ These diagnostics are performed periodically - in template section of replicaset
 
 ## Services
 1. Pods are ephemeral
-2. They are recreated and not resurrected 
+2. They are recreated and not resurrected
 3. Services are abstraction of a way to expose an app running on a set of pods by reliable network svc.
 4. Exposes pod over a reliable IP, Port, DNS
 5. Associated with pods via matching labels
@@ -196,15 +209,15 @@ These diagnostics are performed periodically - in template section of replicaset
 1. Containers are ephemeral
 2. We require persistent storage
 3. Types:
-    1. emptyDir - 
-        1. No data at start, 
-        2. created when pods get created, 
+    1. emptyDir -
+        1. No data at start,
+        2. created when pods get created,
         3. mounted and accessible across all containers in the pod
         4. Help sharing data across containers
         5. spec -> volumes/name : html, volumes/emptyDir: {}
         6. spec/containers -> volumeMounts/name : html, volumeMounts/mountPath: <path-inside-container>
         7. Good option to share data b/w container but data is lost once pod goes down
-    2. hostPath - 
+    2. hostPath -
         1. Storage from backing Node [Host] is mounted inside container [Pod]
         2. Data retained on Node even after Pod goes down
         3. Data not available if Pod is scheduled on another Node
@@ -254,3 +267,34 @@ These diagnostics are performed periodically - in template section of replicaset
 
 ## Other sources
 1. Link to K8 commands compilation: https://www.evernote.com/shard/s645/sh/18a2e56b-3451-90a2-75b5-2f91ec5ac6ef/3e5b88d59f5bb686d5fb7350cf823e63
+
+## Namespaces
+1. resource address format: <resource-name>.<namespace-name>.<resource-type-domain>.cluster.local
+2. kubectl create -f <file-name> --namespace=<namespace-name>
+3. Also, namespace can be mentioned in metadata of the resource
+4. kubectl create namespace <namespace-name>
+5. kubectl config set-context $(kubectl config current-context) --namespace=<namespace-name>
+
+## Resource Quota
+```
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+    name: compute-quota
+    namespace: dev
+spec:
+    hard:
+        pods: "10"
+        requests.cpu: "4"
+        requests.memory: 5Gi
+        limits.cpu: "10"
+        limits.memory: 10Gi
+```
+
+### Imperative commands
+1. --dry-run=client -> resource won't be created, instead will tell if resource would be created or not
+2. -o yaml -> resource definition in YAML format
+3. kubectl run nginx --image=nginx --dry-run=client -o yaml : will not create the resource 'pod' but will give pod declarative definition
+4. kubectl create deployment --image=nginx nginx --dry-run -o yaml : will not create the resource 'deployment' but will give deployment declarative definition
+5. kubectl create deployment nginx --image=nginx--dry-run=client -o yaml > nginx-deployment.yaml : saves definition to a file
+6. kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml : will not create the resource 'service' but will give service declarative definition

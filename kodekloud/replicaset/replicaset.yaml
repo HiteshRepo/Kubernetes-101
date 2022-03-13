@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: new-replica-set
+spec:
+  selector:
+    matchLabels:
+      name: busybox-pod
+  replicas: 4
+  template:
+    metadata:
+      name: busybox
+      labels:
+        name: busybox-pod
+    spec:
+      containers:
+        - name: busybox
+          image: busybox
+          command:
+            - sh
+            - -c
+            - echo Hello Kubernetes! && sleep 3600
