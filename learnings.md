@@ -298,3 +298,29 @@ spec:
 4. kubectl create deployment --image=nginx nginx --dry-run -o yaml : will not create the resource 'deployment' but will give deployment declarative definition
 5. kubectl create deployment nginx --image=nginx--dry-run=client -o yaml > nginx-deployment.yaml : saves definition to a file
 6. kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml : will not create the resource 'service' but will give service declarative definition
+
+### Commands in Docker/Kubernetes
+1. CMD vs EntryPoint - command line args replace CMD while it gets appended in EntryPoint
+2. Default can be specified by having both CMD and EntryPoint - CMD instructions are appended to EntryPoint
+3. ENTRYPOINT (docker) -> command (k8)
+4. CMD (docker) -> args (k8)
+
+### Editing properties of a running Pod
+1. Specifications of an existing POD, CANNOT be edited other than the below:
+   1. spec.containers[*].image
+   2. spec.initContainers[*].image
+   3. spec.activeDeadlineSeconds
+   4. spec.tolerations
+2. The environment variables, service accounts, resource limits of a running pod cannot be edited
+3. There are 2 options to achieve though:
+   1. Approach 1:
+      1. kubectl edit pod <pod name> -> This will open up pod specification in a vi editor
+      2. Change the specifications and try to save it -> will through error but will save the changed specifications in a temp file
+      3. delete the existing pod: `kubectl delete pod <pod-name>`
+      4. create the changed pod: `kubectl create -f <tmp file path>`
+   2. Approach 2:
+      1. Extract the pod definition in YAML format to a file using the command: `kubectl get pod <pod-name> -o yaml > my-new-pod.yaml`
+      2. vi my-new-pod.yaml: changes specifications and save
+      3. kubectl delete pod <pod-name>
+      4. kubectl create -f my-new-pod.yaml
+4. For deployments: `kubectl edit deployment my-deployment`, the new changes will be applied to the pods (running pods will be terminated and new pods with latest specifications will be created)

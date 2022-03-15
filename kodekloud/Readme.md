@@ -51,3 +51,15 @@
 6. Create a new namespace called dev-ns: `kubectl create namespace dev-ns`
 7. Refer kodekloud/imperative/commands.yaml last deployment
 8. Refer kodekloud/imperative/commands.yaml last
+
+### Commands and arguments
+1. What is the command used to run the pod ubuntu-sleeper?: `kubectl describe pod ubuntu-sleeper`: see under Containers/ubuntu/Command
+2. Create a pod with the ubuntu image to run a container to sleep for 5000 seconds. Modify the file ubuntu-sleeper-2.yaml: Refer kodekloud/commandsAndArguments/ubuntu-sleeper-2.yaml
+3. Create a pod using the file named ubuntu-sleeper-3.yaml. There is something wrong with it. Try to fix it!: Refer kodekloud/commandsAndArguments/ubuntu-sleeper-3.yaml (section 1 & 2)
+4. Update pod ubuntu-sleeper-3 to sleep for 2000 seconds: Refer kodekloud/commandsAndArguments/ubuntu-sleeper-3.yaml (section 3)
+5. Inspect the file Dockerfile given at /root/webapp-color. What command is run at container startup?: python app.py, Refer kodekloud/commandsAndArguments/webapp/Dockerfile
+6. Inspect the file Dockerfile2 given at /root/webapp-color. What command is run at container startup?: python app.py --color red, Refer kodekloud/commandsAndArguments/webapp/Dockerfile2
+7. Inspect the two files under directory webapp-color-2. What command is run at container startup?: --color green Refer kodekloud/commandsAndArguments/webapp-2
+8. Inspect the two files under directory webapp-color-3.  What command is run at container startup?: python app.py --color pink Refer kodekloud/commandsAndArguments/webapp-color-3
+9. Create a pod with the given specifications. By default it displays a blue background. Set the given command line arguments to change it to green: Refer Refer kodekloud/commandsAndArguments/webapp-green.yaml
+9. Create a pod with the given specifications. By default it displays a blue background. Set the given command line arguments to change it to green: Refer Refer kodekloud/commandsAndArguments/webapp-green.yaml
