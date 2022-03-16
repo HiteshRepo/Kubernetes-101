@@ -62,4 +62,15 @@
 7. Inspect the two files under directory webapp-color-2. What command is run at container startup?: --color green Refer kodekloud/commandsAndArguments/webapp-2
 8. Inspect the two files under directory webapp-color-3.  What command is run at container startup?: python app.py --color pink Refer kodekloud/commandsAndArguments/webapp-color-3
 9. Create a pod with the given specifications. By default it displays a blue background. Set the given command line arguments to change it to green: Refer Refer kodekloud/commandsAndArguments/webapp-green.yaml
-9. Create a pod with the given specifications. By default it displays a blue background. Set the given command line arguments to change it to green: Refer Refer kodekloud/commandsAndArguments/webapp-green.yaml
+10. Create a pod with the given specifications. By default it displays a blue background. Set the given command line arguments to change it to green: Refer Refer kodekloud/commandsAndArguments/webapp-green.yaml
+
+### Config Maps
+1. What is the environment variable name set on the container in the pod?: `kubectl describe pod webapp-color` -> Containers/webapp-color/Environment
+2. What is the environment variable name set on the container in the pod?: `kubectl describe pod webapp-color` -> Containers/webapp-color/Environment/APP_COLOR
+3. Change environment variable APP_COLOR to green: Refer kodekloud/configmaps/webapp-color-env.yaml
+4. How many ConfigMaps exists in the default namespace? : `kubectl get configmaps`
+5. Identify the database host from the config map db-config: `kubectl describe configmap db-config`
+6. Create a new ConfigMap for the webapp-color POD. Use the spec given below. ConfigName Name: webapp-config-map, Data: APP_COLOR=darkblue: Refer kodekloud/configmaps/webapp-config-map.yaml
+7. Update the environment variable on the POD to use the newly created ConfigMap: Refer kodekloud/configmaps/webapp-color-configmap.yaml
+8. 
+9. 

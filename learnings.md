@@ -324,3 +324,59 @@ spec:
       3. kubectl delete pod <pod-name>
       4. kubectl create -f my-new-pod.yaml
 4. For deployments: `kubectl edit deployment my-deployment`, the new changes will be applied to the pods (running pods will be terminated and new pods with latest specifications will be created)
+
+### Environment variables
+1. In pod specifications, under 'env' attribute. This is an array of (Key value pair) name & value.
+2. Other ways of specifying env vars are: ConfigMap and Secrets
+3. Example of direct key-value pair under 'env'
+```
+env:
+    - name: APP_COLOR
+      value: pink
+```
+4. Example of config-map under 'env'
+```
+env:
+    - name: APP_COLOR
+      valueFrom:
+        configMapKeyRef: <config-map-name>
+```
+5. Example of secret under 'env'
+```
+env:
+    - name: APP_COLOR
+      valueFrom:
+        secretKeyRef: <secret-name>
+```
+
+### ConfigMaps
+1. Centralized way of configuring configuration data in the form of key-value pairs.
+2. When pods are created, these configuration data are injected to the apps inside the container inside the pod for usage
+3. Phases: Create config map, inject them into pod
+4. Imperative way of creating a config map
+```
+kubectl create configmap <config-map-name> --from-literal=key1=value1 --from-literal=key2=value2 
+```
+
+```
+kubectl create configmap <config-map-name> --from-file=<path-to-file>
+```
+5. Declarative way of creating a config map: apiVersion, kind, metadata, data (ke-value pairs)
+```
+kubectl apply -f <config-map-definition-file-path>
+```
+6. kubectl get configmaps
+7. kubectl describe configMaps
+8. Map config map to pod definition/template
+```
+envFrom:
+    - configMapRef:
+        name: <config-map-name>
+```
+
+```
+volumes:
+- name: <volume-name>
+  configMap:
+    name: <config-map-name>
+```
