@@ -353,13 +353,10 @@ env:
 1. Centralized way of configuring configuration data in the form of key-value pairs.
 2. When pods are created, these configuration data are injected to the apps inside the container inside the pod for usage
 3. Phases: Create config map, inject them into pod
-4. Imperative way of creating a config map
+4. Imperative ways of creating a config map
 ```
-kubectl create configmap <config-map-name> --from-literal=key1=value1 --from-literal=key2=value2 
-```
-
-```
-kubectl create configmap <config-map-name> --from-file=<path-to-file>
+kubectl create configmap <config-map-name> --from-literal=key1=value1 --from-literal=key2=value2
+kubectl create configmap <config-map-name> --from-file=<path-to-file> 
 ```
 5. Declarative way of creating a config map: apiVersion, kind, metadata, data (ke-value pairs)
 ```
@@ -380,3 +377,35 @@ volumes:
   configMap:
     name: <config-map-name>
 ```
+
+### Secrets
+1. Imperative way to create a secret:
+```
+kubectl create secret generic <secret-name> --from-literal=<key>=<value>
+kubectl create secret generic <secret-name> --from-file=<path-to-file>
+```
+
+2. Declarative way to create a secret
+```
+kubectl create -f <secret-file-name>
+```
+3. Encoded data values in secret definition. Although just encoding is not enough, so it is better to use some KMS decryption
+4. kubectl get secrets
+5. kubectl describe secrets
+6. kubectl describe secrets <secret-name> -o yaml : to view the hashed secrets
+7. Map secret to pod definition/template
+```
+envFrom:
+    - secretRef:
+        name: <secret-name>
+```
+
+```
+volumes:
+- name: <volume-name>
+  secret:
+    secretName: <secret-name>
+```
+
+If secret is used as volume mount, each attribute in secret is creates its own file and with vaue as contents in it
+

@@ -72,5 +72,16 @@
 5. Identify the database host from the config map db-config: `kubectl describe configmap db-config`
 6. Create a new ConfigMap for the webapp-color POD. Use the spec given below. ConfigName Name: webapp-config-map, Data: APP_COLOR=darkblue: Refer kodekloud/configmaps/webapp-config-map.yaml
 7. Update the environment variable on the POD to use the newly created ConfigMap: Refer kodekloud/configmaps/webapp-color-configmap.yaml
-8. 
-9. 
+
+### Secrets
+1. How many Secrets exist on the system?: `kubectl get secrets`
+2. How many secrets are defined in the default-token secret?: `kubectl describe secrets default-token-xcwxh` : check Data section
+3. What is the type of the default-token secret?: `kubectl describe secrets default-token-xcwxh` : check Type section
+4. Which of the following is not a secret data defined in default-token secret?: `kubectl describe secrets default-token-xcwxh` : check Data section
+5. Create a new secret named db-secret with the data given below. (Refer kodekloud/secrets/db-secret.yaml)
+   Secret Name: db-secret
+   Secret 1: DB_Host=sql01
+   Secret 2: DB_User=root
+   Secret 3: DB_Password=password123
+6. Configure webapp-pod to load environment variables from the newly created secret: Refer kodekloud/secrets/webapp-pod.yaml
+7. 
