@@ -84,4 +84,11 @@
    Secret 2: DB_User=root
    Secret 3: DB_Password=password123
 6. Configure webapp-pod to load environment variables from the newly created secret: Refer kodekloud/secrets/webapp-pod.yaml
-7. 
+
+### Docker Security
+1. What is the user used to run ubuntu-sleeper? : `kubectl describe pod ubuntu-sleeper`
+2. Edit the pod ubuntu-sleeper to run the sleep process with user ID 1010: Refer kodekloud/securitycontexts/ubuntu-sleeper.yaml
+3. A Pod definition file named multi-pod.yaml is given. With what user are the processes in the web container started?: Refer kodekloud/securitycontexts/multi-pod.yaml: 1002
+4. With what user are the processes in the sidecar container started?: Refer kodekloud/securitycontexts/multi-pod.yaml: 1001
+5. Update pod ubuntu-sleeper to run as Root user and with the SYS_TIME capability: Refer kodekloud/securitycontexts/ubuntu-sleeper-root.yaml
+6. Now update the pod to also make use of the NET_ADMIN capability: Refer kodekloud/securitycontexts/ubuntu-sleeper-root.yaml

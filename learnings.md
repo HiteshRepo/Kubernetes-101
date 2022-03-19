@@ -409,3 +409,59 @@ volumes:
 
 If secret is used as volume mount, each attribute in secret is creates its own file and with vaue as contents in it
 
+### Docker Security
+1. Host itself runs a set of processes, docker daemon, ssh-server, etc.
+2. Docker containers unlike VMs share same linux kernel as the hosts' but they are separated by namespaces
+3. Container has its own namespace and host has its own
+4. All processes run on container in fact run on host itself but in a different namespace (namespace of container)
+5. Docker container can see only see its own processes only
+6. Listing processes in a container (ps aux) will only show processes within container
+7. Listing processes in the host (ps aux) will show all processes within and out of container(s)
+8. Docker container has a set of users root users and a set of non-root users
+9. By default, docker runs processes within container as root users
+10. User can be changed, user can be set using while running docker using --user flag: `docker run --user=1000 ubuntu sleep 1000`
+11. Another way to set user is creating a custom image from an existing image and setting used in the docker file itself
+Example dockerfile:
+```
+FROM ubuntu
+USER 1000
+```
+building the above custom image
+```
+docker build -t my-ubuntu-image .
+```
+run the image w/o specifying the user
+12. If we run container as a root user, is it not dangerous?
+    1. Docker implements the set of security features that limits the capability of the root user within the container
+    2. Root user within the container is not really same as root user on host
+    3. Docker uses linux capabilities to achieve this
+    4. Root user is the most powerful user in a system and can do set of these ops: CHOWN, DAC, KILL, SETGID, SETUID, NET_ADMIN, KILL, etc.
+    5. The process running as a root user too has unrestricted access of the system
+    6. Docker's root user by default has limited capabilities, they do not have all the privilleges
+    7. We can add more capabilities to the container's user while running it: `docker run --cap-add KILL ubuntu`
+    8. We can drop capabilities of the container's user while running it: `docker run --cap-drop MAC_ADMIN ubuntu`
+    9. We can run container with all privileges as well: `docker run --privilleged ubuntu`
+
+### Security contexts
+1. Configuring user id of a container, adding/removing privileges of a user in a k8 is also possible
+2. Security settings can be configured at container/pod level
+3. If we set at pod level the settings will be applied to all containers within pod
+4. If we set at both pod and container level, then settings of container level will take precedence over pod settings
+5. Configuration
+```
+apiVersion: v1
+kind: Pod
+metadata:
+    name: web-app
+spec:
+    securityContext:
+        runAsUser: 1000 #all conatainers within this pod will run with user id 1000
+    containers:
+        - name: ubuntu
+          image: ubuntu
+          command: ["sleep", "1000"]
+          securityContext:
+            runAsUser: 2000 #the user id for this container would be 2000 overrinding 1000
+            capabilities: 
+                add: ["MAC_ADMIN", "KILL"]
+```
