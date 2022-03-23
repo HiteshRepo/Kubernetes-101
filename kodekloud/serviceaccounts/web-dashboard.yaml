@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-dashboard
+  labels:
+    name: web-dashboard
+spec:
+  containers:
+    - name: web-dashboard
+      image: gcr.io/kodekloud/customimage/my-kubernetes-dashboard
+  serviceAccountName: dashboard-sa

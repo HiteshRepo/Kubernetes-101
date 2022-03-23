@@ -465,3 +465,30 @@ spec:
             capabilities: 
                 add: ["MAC_ADMIN", "KILL"]
 ```
+
+### Service Accounts
+1. Two types of account in K8: User a/c and Service a/c.
+2. User account: used by humans, Service account: for automated tasks(by machines)
+3. User account types (not limited to): Admin (to perform admin tasks), Developer(to access the cluster and deploy apps)
+4. Service account types are used my an app to interact with k8 cluster, examples:
+   1. A monitoring app like Prometheus uses service a/c to poll k8 metrics/logs to come up with performance metrics
+   2. An automated build tool like Jenkins uses service a/c to deploy app on the cluster
+5. To create a service a/c: `kubectl create serviceaccount <account-name>`
+6. To view all service a/c: `kubectl get service a/c`
+7. On creation of service a/c a token is created automatically: `kubectl descrive serviceaccount <acocunt-name>` - see Tokens
+8. The above token can be used by the external apps for authentication of kube-api as a bearer token.
+9. Token is stored as a secret object.
+10. To view the secret object: `kubectl describe secret <secret-name>`
+11. Steps:
+    1. create a service a/c
+    2. assign role based permissions/access control mechanisms
+    3. export the token
+    4. use it in external app while making kube api requests
+12. If the external app itself is hosted in K8 cluster, the exporting can be made simpler by mounting the secret as a volume to the application.
+13. To view the secret files in the pod (which has secret mounted as volume):
+    1. exec into the pod: kubectl exec -it <pod-name>
+    2. ls /var/run/secrets/kubernetes.io/serviceaccount -> ca.crt, namespace, token
+    3. cat /var/run/secrets/kubernetes.io/serviceaccount/token
+14. Default service accounts are mounted automatically to every pods, which has limited permissions.
+15. To assign a service account: spec/serviceAccountName: <service a/c name>
+16. To prevent k8 from automatically mounting default service a/c : spec/automountServiceAccountToken: false

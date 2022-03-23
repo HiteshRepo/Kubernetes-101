@@ -92,3 +92,15 @@
 4. With what user are the processes in the sidecar container started?: Refer kodekloud/securitycontexts/multi-pod.yaml: 1001
 5. Update pod ubuntu-sleeper to run as Root user and with the SYS_TIME capability: Refer kodekloud/securitycontexts/ubuntu-sleeper-root.yaml
 6. Now update the pod to also make use of the NET_ADMIN capability: Refer kodekloud/securitycontexts/ubuntu-sleeper-root.yaml
+
+### Service accounts
+1. How many Service Accounts exist in the default namespace: `kubectl get serviceaccount`
+2. What is the secret token used by the default service account?: `kubectl describe serviceaccount default`: See Tokens
+3. We just deployed the Dashboard application. Inspect the deployment. What is the image used by the deployment?: `kubectl describe pod <pod-name>`
+4. At what location is the ServiceAccount credentials available within the pod?: /var/run/secrets
+5. Create a new ServiceAccount named 'dashboard-sa': `kubectl create serviceaccount dashboard-sa`
+6. Enter the access token in the UI of the dashboard application. Click Load Dashboard button to load Dashboard:
+   1. `kubectl describe serviceaccount dashboard-sa`
+   2. `kubectl describe secret dashboard-sa-token-qh5jz`
+7. Update the deployment to use the newly created ServiceAccount: Refer kodekloud/serviceaccounts/web-dashboard.yaml
+8. 
