@@ -492,3 +492,33 @@ spec:
 14. Default service accounts are mounted automatically to every pods, which has limited permissions.
 15. To assign a service account: spec/serviceAccountName: <service a/c name>
 16. To prevent k8 from automatically mounting default service a/c : spec/automountServiceAccountToken: false
+
+### Resource Requirements
+1. Scheduler decides which node the pod goes to.
+   1. Scheduler takes into consideration: the amount of resources by a pod and availability of it in node.
+2. If there is no sufficient resources available on any of the nodes, K8 keeps the po in pending state with event reason as insufficient CPU/memory/disk
+3. Default CPU: 0.5, MEM: 256 Mi, Disk: (Resource Request)
+4. spec/conatiners:
+   ```
+   resources:
+    requests:
+        memory: "1Gi"
+        cpu: 1
+   ```
+5. cpu 0.1 means 100m (m -> milli)
+6. cpu can be requested as low as 1m
+7. 1 cpu equivalent to
+   1. 1 AWS vCPU
+   2. 1 GCP core
+   3. 1 Azure core
+   4. 1 Hyperthread
+8. 1Gi memory means 1 Gibibyte while 1G means 1 Gigabyte
+9. set limits under spec/conatiners/resources, to prevent pod from consuming too much resources and suffocating other pods
+   ```
+   limits:
+    memory: "2Gi"
+    cpu: 2
+   ```
+10. when pod tries to go beyond the limit cpu, k8 tries to throttle the cpu so that pod will not be able to consume more cpu
+11. when pod tries to go beyond the limit mem, k8 terminates the pod
+12. The status OOMKilled indicates that it is failing because the pod ran out of memory. Identify the memory limit set on the POD
