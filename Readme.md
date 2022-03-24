@@ -1,429 +1,494 @@
-## Exercise - 1
-1. Install kubectl - brew install kubectl 
-2. Install minikube - brew install minikube
-3. minikube status
-4. minikube start --memory=16000m --cpus=4 --driver=docker
-5. minikube status
-    * minikube status
-    * minikube
-    * type: Control Plane
-    * host: Running
-    * kubelet: Running
-    * apiserver: Running
-    * kubeconfig: Configured
-6. kubectl config get-contexts
-CURRENT   NAME       CLUSTER    AUTHINFO   NAMESPACE
-*minikube   minikube   minikube   default
-7. kubectl get nodes -o wide
-NAME       STATUS   ROLES                  AGE     VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME
-minikube   Ready    control-plane,master   7m32s   v1.22.3   192.168.49.2   <none>        Ubuntu 20.04.2 LTS   5.10.47-linuxkit   docker://20.10.8
-8. cat ~/.kube/config
+## High Level Arch
+1. Master Node
+    1. Api server - face of k8 master, every c’ happens via api server
+    2. Schedulers - schedule workloads to worker nodes
+    3. Control manager - compare state mentioned in request [desired] and actual state, then act accordingly
+    4. Etcd - distributed key value store - only stateful component - source of truth
+2. Worker Nodes
+    1. Kubelet - take request from master and fulfil them, reports to master node
+    2. Docker runtime - to run containers - OCI compliant container engine, deals with container abstraction
+    3. Kube proxy - manage n/w b/w worker nodes, Assigns IP to eat pod with the help of CNI provider
+    4. Pods
+3. Flow
+    1. Client sends a request - To keep infra in a particular state
+    2. Api server receives request and save it to Etcd
+    3. Ctrl manager keeps looking at Etcd to notice any differences b/w current state and desired state
+    4. Once decision has been made on what needs to be changed in pods, scheduler assign actual pod configuration to worker node
+    5. Kubelet in worker node keeps listening to the api server in Master node
+    6. Kubelet uses docker runtime to spin up new pods with mentioned configuration
+    7. The new IPs of pods and routes definition are done by Kube proxy - IP table route
+4. Even Kubernetes components like api server, controller, scheduler, kubeproxy, etc run as pods
+
+
+## Kubectl
+1. CLI to communicate with k8 api server
+2. Restful communication
+3. kubectl [command] [type] [name] [flags]
+4. Commands - get, patch, delete
+5. Type - pods, services, jobs
+6. Flags - -o (wide)
+7. Connects to API server of K8 master node
+8. Use rest apis to do that
+9. Kubeconfig - info related to :
+    1. Cluster info
+    2. User info
+    3. Namespace
+10. Default loc of kubeconfig - $HOME/.kube/config
+11. KUBECONFIG env var
+
+## k8 commands
+
+* kubectl version
+* kubectl version —short - client version and server version
+* kubectl get nodes
+* kubectl get nodes -o wide
+* kubectl config view - to get cluster info, user info and namespace
+* kubectl get config get-contexts
+* kubectl get pods
+* kubectl get pods -A -o wide
+* kubectl apply -f file.yaml
+* kubectl delete <object-type>/<object-name>
+* kubectl describe <object-type>/<object-name>
+* kubectl get pods —show-labels
+* kubectl get svc
+* kubectl get endpoints
+* kubectl describe endpoints svc-name
+* kubectl rollout history deployment/<deploy-name>
+* kubectl rollout undo deployment/<deploy-name> --to-revision=1
+* kubectl cordon node-name -> no further pod will be scheduled here -> STATUS: SchedulingDisabled
+* kubectl replace -f <file name> -> Replaces existing configuration with latest, works same as apply
+* kubectl scale --replicas=6 <type> <name>
+* minikube ip
+* minikube ssh - to connect to minikube
+* eval $(minikube docker-env) - to make docker point to minikube docker context
+
+## Formatting o/p
+1. -o json -> in json formatted API object
+2. -o name -> only name of the resource
+3. -o wide -> additional info in plain-text format
+4. -o yaml -> YAML formatted API object
+
+## Minikube Objects
+1. Persistent entity in K8s system and rep state of system
+2. Includes:
+    1. Spec - desired/requested state
+    2. Status - current state
+3. Also called API resources
+4. Smallest deployable unit - pods
+5. Abstraction on top of pods - replica-set, stateful-set, daemon-set, job and cron-job, services and ingress
+6. Abstraction on top of Replicaset - Deployment
+7. Volumes, PVC,PV, Storage Class
+8. ConfigMap and Secrets
+9. Object descriptor YAML - to communicate our desired state
+10. Parts of object descriptor file:
+    1. apiVersion,
+    2. kind [of object],
+    3. metadata [info about object, name - unique identifier, labels]
+    4. Spec - actual specification of the object to be created
+11. Replication controller (same purpose as Replica Set) -
+    1. Replica set is recommended,
+    2. Replication controller is an older concept
+    3. Replication controller does not have 'selector' under spec, but Replica Set has
+    4. Selector helps Replica Set to attach any already running pods to itself or any other pods that can be started individually in future
+
+## Pods
+1. Smallest unit
+2. Run inside nodes
+3. Can run multiple pods in 1 node
+4. Pods are a wrapper over containers
+5. Multiple containers in a pod is possible and they share the same container env, but best practice is to run 1 container/pod unless other containers are monitoring/tracking apps
+6. Ring-fenced env
+    1. Network stack
+    2. Volume mounts
+    3. Kernel namespace
+7. High level Pod lifecycle -
+    1. Kubectl -> API server
+    2. API server -> Etcd
+    3. Scheduler reads from Etcd -> Node [kubelet/worker]
+    4. Pod - pending
+    5. Pod - Running / Failed
+    6. Pod - Success
+8. Intra pod communication
+    1. Containers within pod talk to each other via localhost
+    2. Share same n/w namespace, hence same IP and Port
+    3. Container within Pod to avoid same port, use to avoid port binding error
+9. Inter pod communication
+    1. Each pod gets own private IP from k8 cluster vpn
+10. Container specs tags
+    1. name
+    2. image
+    3. command
+    4. args
+    5. workingDir
+    6. ports
+    7. env
+    8. resources
+    9. volumeMounts
+    10. livenessProbe
+    11. readinessProbe
+    12. lifecycle
+    13. terminationMessagePath
+    14. imagePullPolicy
+    15. securityContext
+    16. stdin
+    17. stdinOnce
+    18. tty
+
+## Replica sets
+    1. Abstraction over pods, which ensures that a particular no. of pods is always running in the cluster
+    2. Uses Reconciliation control loop -> Current state - Desired State - Observe-Diff-Act
+    3. Ensures that a pod or homogeneous set of pods are always available
+    4. Maintains desired no. of pods:
+        1. Excess pods - killed
+        2. Launch new pod - in case of fail/deleted/terminated
+    5. Associated with pods via matching labels
+    6. Labels: Key-Value pair attached to objects like pod - user defined
+    7. Selectors: Help identify objects in cluster - equality based / set based
+    8. apiVersion - apps/v1
+    9. kind - ReplicaSet
+    10. metadata - name, labels…
+    11. spec - 
+        1. replicas
+        2. selector - matchLabels - app
+        3. template - pod specification - prevents specifying separate pod yaml
+    12. Distributes pods evenly across nodes
+    13. Deleting replica set -> deletes associated pods as well
+
+## Health check probes for containers:
+These diagnostics are performed periodically - in template section of replicaset/deployments - httpGet [path] /exec [command] - initialDelaySeconds and periodSeconds
+1. readinessProbe - indicates if container is ready to serve requests, halts sending new requests until probe succeed - in template section of replicaset/deployments - httpGet/exec - initialDelaySeconds and periodSeconds
+2. livenessProbe - indicates whether the container is running healthy, if fails, declares container unhealthy and restarts container
+3. startupProbe - protect slow starting containers with startup probes
+
+### Supported check types
+1. httpGet - /health endpoint
+2. exec - shell script or command to exit successfully with return code 0
+3. tcpSocket - open a socket to container on specified port successfully
+
+
+## Services
+1. Pods are ephemeral
+2. They are recreated and not resurrected
+3. Services are abstraction of a way to expose an app running on a set of pods by reliable network svc.
+4. Exposes pod over a reliable IP, Port, DNS
+5. Associated with pods via matching labels
+6. Also used for inter pod communication
+7. Client -> service [DNS/IP] -> Endpoint object [list of all pod IP address associated with svc, keeps getting updated]
+8. Types:
+    1. ClustedIP - default - cluster-internal IP only access within n/w
+    2. NodePort - exposes node on a static port - NodeIP:NodePort
+    3. LoadBalancer - Exposes service publicly
+9. apiVersion - v1
+10. kind - service
+11. metadata - name
+12. spec - type, selector - app [same as replicaset/template/metadata/name or pod/metadata/name]
+13. ports - protocol, port, targetPort
+14. Deleting pod or replica sets does not affect svc but just removes them from endpoints. Upon new spin ups, services will update the endpoints based on label-selector
+15. Readiness and Liveliness probe also affect the endpoints
+
+## Deployments
+1. How to deploy a new version of app?
+2. How to roll back?
+3. Is replica set good enough?
+4. Change in rs.pod spec - no effect
+5. Delete and re-deploy rs - change effected
+6. Updates with zero downtime
+7. Rollbacks
+8. A higher level of abstraction over replica set, provides declarative way of upgrading and rollbacks to pods
+9. Flow:
+    1. Current state - RS 1
+    2. Client -> Revision 2 -> API server
+    3. Scheduler + Control Manager -> spin up RS 2, pods created
+    4. Terminate pods in RS1
+    5. RS 1 still persists -> so that during rollback, the can be used
+10. The diff b/w replica-set and deployment is the kind
+11. Default strategy - RollingUpdate - maxSurge, maxUnavailable
+12. Recreate strategy -> downtime
+
+## Volumes
+1. Containers are ephemeral
+2. We require persistent storage
+3. Types:
+    1. emptyDir -
+        1. No data at start,
+        2. created when pods get created,
+        3. mounted and accessible across all containers in the pod
+        4. Help sharing data across containers
+        5. spec -> volumes/name : html, volumes/emptyDir: {}
+        6. spec/containers -> volumeMounts/name : html, volumeMounts/mountPath: <path-inside-container>
+        7. Good option to share data b/w container but data is lost once pod goes down
+    2. hostPath -
+        1. Storage from backing Node [Host] is mounted inside container [Pod]
+        2. Data retained on Node even after Pod goes down
+        3. Data not available if Pod is scheduled on another Node
+        4. Cant save data from Node outage
+        5. spec -> volumes/name : html, volumes/hostPath/path: <existing-worker-node-path>, volumes/hostPath/type: Directory
+        6. spec/containers -> volumeMounts/name : html, volumeMounts/mountPath: <path-inside-container>
+        7. Good option to shared data across pods in a Node
+    3. Cloud volume type -
+        1. awsEBS
+        2. gcePersistentDisk
+        3. azureDisk
+    4. Nfs
+
+## PV and PVC
+1. Abstracts how storage is provided and how storage is consumed
+2. PV
+    1. Represent actual volume
+    2. Provisioned by Admin or dynamically provisioned using StorageClass
+    3. Lifecycle <-> Pod
+3. PVC
+    1. Represent request for volume by user
+    2. Abstract the storage resource without exposing details how those volumes are implemented
+    3. Claims are fulfilled by PV hence PVC is linked with PV
+4. Retain - Actual volume is retained even after PV and PVC is deleted
+5. Delete - Actual physical storage is deleted, default
+6. Recycle - Deprecated
+7. Access modes
+    1. ReadWriteOnce - RWO - volume can mounted by read-write by single node
+    2. ReadOnlyMany - ROX - read-only by many nodes
+    3. ReadWriteMany - RWX - read-write by many nodes
+
+## Storage Class
+1. Provisioning
+    1. Static:
+        1. Admin creates a number of PVC
+        2. Cluster matches one of the PV for a PVC
+        3. Only one PVC can be attached for a PV
+    2. Dynamic:
+        1. Allows storage volumes to be created on-demand as per the request
+        2. Claims are fulfilled by PV, hence PVC are linked to PV
+2. Helps create dynamic on-demand PVs
+3. PVC refers storage class, Storage class provisions PVC on demand, Deployment/ReplicaSet/Pod mount the PV via PVC
+4. Basically storage class are template for PVs
+5. Provisioners - cloud service providers
+6. Parameters - specific to provisioners
+7. If PVC is deleted, PV is also gone, id reclaim policy is not set to ‘retain’
+
+## Other sources
+1. Link to K8 commands compilation: https://www.evernote.com/shard/s645/sh/18a2e56b-3451-90a2-75b5-2f91ec5ac6ef/3e5b88d59f5bb686d5fb7350cf823e63
+
+## Namespaces
+1. resource address format: <resource-name>.<namespace-name>.<resource-type-domain>.cluster.local
+2. kubectl create -f <file-name> --namespace=<namespace-name>
+3. Also, namespace can be mentioned in metadata of the resource
+4. kubectl create namespace <namespace-name>
+5. kubectl config set-context $(kubectl config current-context) --namespace=<namespace-name>
+
+## Resource Quota
 ```
 apiVersion: v1
-clusters:
-- cluster:
-    certificate-authority: /Users/hitesh.pattanayak/.minikube/ca.crt
-    extensions:
-    - extension:
-        last-update: Sat, 11 Dec 2021 10:19:55 IST
-        provider: minikube.sigs.k8s.io
-        version: v1.24.0
-      name: cluster_info
-    server: https://127.0.0.1:65441
-  name: minikube
-contexts:
-- context:
-    cluster: minikube
-    extensions:
-    - extension:
-        last-update: Sat, 11 Dec 2021 10:19:55 IST
-        provider: minikube.sigs.k8s.io
-        version: v1.24.0
-      name: context_info
-    namespace: default
-    user: minikube
-  name: minikube
-current-context: minikube
-kind: Config
-preferences: {}
-users:
-- name: minikube
-  user:
-    client-certificate: /Users/hitesh.pattanayak/.minikube/profiles/minikube/client.crt
-    client-key: /Users/hitesh.pattanayak/.minikube/profiles/minikube/client.key
+kind: ResourceQuota
+metadata:
+    name: compute-quota
+    namespace: dev
+spec:
+    hard:
+        pods: "10"
+        requests.cpu: "4"
+        requests.memory: 5Gi
+        limits.cpu: "10"
+        limits.memory: 10Gi
 ```
-9. kubectl config view
+
+### Imperative commands
+1. --dry-run=client -> resource won't be created, instead will tell if resource would be created or not
+2. -o yaml -> resource definition in YAML format
+3. kubectl run nginx --image=nginx --dry-run=client -o yaml : will not create the resource 'pod' but will give pod declarative definition
+4. kubectl create deployment --image=nginx nginx --dry-run -o yaml : will not create the resource 'deployment' but will give deployment declarative definition
+5. kubectl create deployment nginx --image=nginx--dry-run=client -o yaml > nginx-deployment.yaml : saves definition to a file
+6. kubectl expose pod redis --port=6379 --name redis-service --dry-run=client -o yaml : will not create the resource 'service' but will give service declarative definition
+
+### Commands in Docker/Kubernetes
+1. CMD vs EntryPoint - command line args replace CMD while it gets appended in EntryPoint
+2. Default can be specified by having both CMD and EntryPoint - CMD instructions are appended to EntryPoint
+3. ENTRYPOINT (docker) -> command (k8)
+4. CMD (docker) -> args (k8)
+
+### Editing properties of a running Pod
+1. Specifications of an existing POD, CANNOT be edited other than the below:
+   1. spec.containers[*].image
+   2. spec.initContainers[*].image
+   3. spec.activeDeadlineSeconds
+   4. spec.tolerations
+2. The environment variables, service accounts, resource limits of a running pod cannot be edited
+3. There are 2 options to achieve though:
+   1. Approach 1:
+      1. kubectl edit pod <pod name> -> This will open up pod specification in a vi editor
+      2. Change the specifications and try to save it -> will through error but will save the changed specifications in a temp file
+      3. delete the existing pod: `kubectl delete pod <pod-name>`
+      4. create the changed pod: `kubectl create -f <tmp file path>`
+   2. Approach 2:
+      1. Extract the pod definition in YAML format to a file using the command: `kubectl get pod <pod-name> -o yaml > my-new-pod.yaml`
+      2. vi my-new-pod.yaml: changes specifications and save
+      3. kubectl delete pod <pod-name>
+      4. kubectl create -f my-new-pod.yaml
+4. For deployments: `kubectl edit deployment my-deployment`, the new changes will be applied to the pods (running pods will be terminated and new pods with latest specifications will be created)
+
+### Environment variables
+1. In pod specifications, under 'env' attribute. This is an array of (Key value pair) name & value.
+2. Other ways of specifying env vars are: ConfigMap and Secrets
+3. Example of direct key-value pair under 'env'
+```
+env:
+    - name: APP_COLOR
+      value: pink
+```
+4. Example of config-map under 'env'
+```
+env:
+    - name: APP_COLOR
+      valueFrom:
+        configMapKeyRef: <config-map-name>
+```
+5. Example of secret under 'env'
+```
+env:
+    - name: APP_COLOR
+      valueFrom:
+        secretKeyRef: <secret-name>
+```
+
+### ConfigMaps
+1. Centralized way of configuring configuration data in the form of key-value pairs.
+2. When pods are created, these configuration data are injected to the apps inside the container inside the pod for usage
+3. Phases: Create config map, inject them into pod
+4. Imperative ways of creating a config map
+```
+kubectl create configmap <config-map-name> --from-literal=key1=value1 --from-literal=key2=value2
+kubectl create configmap <config-map-name> --from-file=<path-to-file> 
+```
+5. Declarative way of creating a config map: apiVersion, kind, metadata, data (ke-value pairs)
+```
+kubectl apply -f <config-map-definition-file-path>
+```
+6. kubectl get configmaps
+7. kubectl describe configMaps
+8. Map config map to pod definition/template
+```
+envFrom:
+    - configMapRef:
+        name: <config-map-name>
+```
+
+```
+volumes:
+- name: <volume-name>
+  configMap:
+    name: <config-map-name>
+```
+
+### Secrets
+1. Imperative way to create a secret:
+```
+kubectl create secret generic <secret-name> --from-literal=<key>=<value>
+kubectl create secret generic <secret-name> --from-file=<path-to-file>
+```
+
+2. Declarative way to create a secret
+```
+kubectl create -f <secret-file-name>
+```
+3. Encoded data values in secret definition. Although just encoding is not enough, so it is better to use some KMS decryption
+4. kubectl get secrets
+5. kubectl describe secrets
+6. kubectl describe secrets <secret-name> -o yaml : to view the hashed secrets
+7. Map secret to pod definition/template
+```
+envFrom:
+    - secretRef:
+        name: <secret-name>
+```
+
+```
+volumes:
+- name: <volume-name>
+  secret:
+    secretName: <secret-name>
+```
+
+If secret is used as volume mount, each attribute in secret is creates its own file and with vaue as contents in it
+
+### Docker Security
+1. Host itself runs a set of processes, docker daemon, ssh-server, etc.
+2. Docker containers unlike VMs share same linux kernel as the hosts' but they are separated by namespaces
+3. Container has its own namespace and host has its own
+4. All processes run on container in fact run on host itself but in a different namespace (namespace of container)
+5. Docker container can see only see its own processes only
+6. Listing processes in a container (ps aux) will only show processes within container
+7. Listing processes in the host (ps aux) will show all processes within and out of container(s)
+8. Docker container has a set of users root users and a set of non-root users
+9. By default, docker runs processes within container as root users
+10. User can be changed, user can be set using while running docker using --user flag: `docker run --user=1000 ubuntu sleep 1000`
+11. Another way to set user is creating a custom image from an existing image and setting used in the docker file itself
+Example dockerfile:
+```
+FROM ubuntu
+USER 1000
+```
+building the above custom image
+```
+docker build -t my-ubuntu-image .
+```
+run the image w/o specifying the user
+12. If we run container as a root user, is it not dangerous?
+    1. Docker implements the set of security features that limits the capability of the root user within the container
+    2. Root user within the container is not really same as root user on host
+    3. Docker uses linux capabilities to achieve this
+    4. Root user is the most powerful user in a system and can do set of these ops: CHOWN, DAC, KILL, SETGID, SETUID, NET_ADMIN, KILL, etc.
+    5. The process running as a root user too has unrestricted access of the system
+    6. Docker's root user by default has limited capabilities, they do not have all the privilleges
+    7. We can add more capabilities to the container's user while running it: `docker run --cap-add KILL ubuntu`
+    8. We can drop capabilities of the container's user while running it: `docker run --cap-drop MAC_ADMIN ubuntu`
+    9. We can run container with all privileges as well: `docker run --privilleged ubuntu`
+
+### Security contexts
+1. Configuring user id of a container, adding/removing privileges of a user in a k8 is also possible
+2. Security settings can be configured at container/pod level
+3. If we set at pod level the settings will be applied to all containers within pod
+4. If we set at both pod and container level, then settings of container level will take precedence over pod settings
+5. Configuration
 ```
 apiVersion: v1
-clusters:
-- cluster:
-    certificate-authority: /Users/hitesh.pattanayak/.minikube/ca.crt
-    extensions:
-    - extension:
-        last-update: Sat, 11 Dec 2021 10:19:55 IST
-        provider: minikube.sigs.k8s.io
-        version: v1.24.0
-      name: cluster_info
-    server: https://127.0.0.1:65441
-  name: minikube
-contexts:
-- context:
-    cluster: minikube
-    extensions:
-    - extension:
-        last-update: Sat, 11 Dec 2021 10:19:55 IST
-        provider: minikube.sigs.k8s.io
-        version: v1.24.0
-      name: context_info
-    namespace: default
-    user: minikube
-  name: minikube
-current-context: minikube
-kind: Config
-preferences: {}
-users:
-- name: minikube
-  user:
-    client-certificate: /Users/hitesh.pattanayak/.minikube/profiles/minikube/client.crt
-    client-key: /Users/hitesh.pattanayak/.minikube/profiles/minikube/client.key
-```
-10. minikube ip
-11. minikube ssh
-12. eval $(minikube docker-env)
-13. docker images - gets images within minikube context
-
-## Excercise - 2
-
-1. kubectl get nodes -o wide
-NAME       STATUS   ROLES                  AGE     VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION     CONTAINER-RUNTIME
-minikube   Ready    control-plane,master   3h50m   v1.22.3   192.168.49.2   <none>        Ubuntu 20.04.2 LTS   5.10.47-linuxkit   docker://20.10.8
-
-2. kubectl get pods
-No resources found in default namespace.
-
-3. kubectl apply -f Ex-2-Pods/metadata-pod.yaml -> pod/metadata created
-4. kubectl describe pod metadata:
-    Events:
-      Type    Reason     Age   From               Message
-      ----    ------     ----  ----               -------
-      Normal  Scheduled  33s   default-scheduler  Successfully assigned default/metadata to minikube
-      Normal  Pulling    31s   kubelet            Pulling image "sunitparekh/metadata:v1.0"
-      Normal  Pulled     13s   kubelet            Successfully pulled image "sunitparekh/metadata:v1.0" in 17.638965766s
-      Normal  Created    13s   kubelet            Created container metdata
-      Normal  Started    13s   kubelet            Started container metdata
-5. kubectl get pods -o wide                                                                                                                                                                     
-    NAME       READY   STATUS    RESTARTS   AGE     IP           NODE       NOMINATED NODE   READINESS GATES
-    metadata   1/1     Running   0          4m40s   172.17.0.3   minikube   <none>           <none>
-6. minikube ssh
-7. curl 172.17.0.3:8080/actuator/info -> {"app":{"name":"Metadata Service","description":"Metadata service also known as config service. It hold the metadata/config required across different services.","version":"1.0.0"}}
-8. kubectl apply -f https://k8s.io/examples/admin/dns/dnsutils.yaml -> pod/dnsutils created
-9. kubectl get pods -o wide                                                                                                                                                                     
-    NAME       READY   STATUS    RESTARTS   AGE     IP           NODE       NOMINATED NODE   READINESS GATES
-    dnsutils   1/1     Running   0          32s     172.17.0.4   minikube   <none>           <none>
-    metadata   1/1     Running   0          9m21s   172.17.0.3   minikube   <none>           <none>
-10. kubectl exec -it dnsutils -- /bin/sh
-11. apt-get install wget or apt install curl
-12. curl 172.17.0.3:8080/actuator/info
-    1. {"app":{"name":"Metadata Service","description":"Metadata service also known as config service. It hold the metadata/config required across different services.","version":"1.0.0"}}
-13. kubectl port-forward pod/metadata 9090:8080 -> PTR - local-port:container-port
-14. Hit localhost:9090/actuator/info in browser
-15. kubectl apply -f Ex-2-Pods/metadata-pod-with-env.yaml -> pod/metadata-env created
-16. kubectl get pods -o wide                                                                                                                                                                     
-    NAME           READY   STATUS    RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
-    dnsutils       1/1     Running   0          21m   172.17.0.4   minikube   <none>           <none>
-    metadata       1/1     Running   0          30m   172.17.0.3   minikube   <none>           <none>
-    metadata-env   1/1     Running   0          25s   172.17.0.5   minikube   <none>           <none>
-17. minikube ssh
-18. curl 172.17.0.5:8080/actuator/info -> {"app":{"name":"Metadata Service","description":"Metadata service also known as config service. It hold the metadata/config required across different 
-19. kubectl apply -f Ex-2-Pods/metadata-pod-with-limits.yaml -> pod/metadata-limits created
-20. kubectl get pods -o wide                                                                                                                                                                     
-    NAME              READY   STATUS    RESTARTS   AGE     IP           NODE       NOMINATED NODE   READINESS GATES
-    dnsutils          1/1     Running   0          26m     172.17.0.4   minikube   <none>           <none>
-    metadata          1/1     Running   0          35m     172.17.0.3   minikube   <none>           <none>
-    metadata-env      1/1     Running   0          5m27s   172.17.0.5   minikube   <none>           <none>
-    metadata-limits   1/1     Running   0          25s     172.17.0.6   minikube   <none>           <none>
-21. kubectl describe metadata-limits
-    ```
-    metdata:
-        Container ID:   docker://fef13048a8e2aefae575227a6bf9a84b2361fac82fa036bd6b58c93219c6ad74
-        Image:          sunitparekh/metadata:v1.0
-        Image ID:       docker-pullable://sunitparekh/metadata@sha256:88c8333bf43df2c9ca3ac47e7d69dd3d19095858b69f328f2eb4f083cc717191
-        Port:           8080/TCP
-        Host Port:      0/TCP
-        State:          Running
-          Started:      Sat, 11 Dec 2021 14:52:47 +0530
-        Ready:          True
-        Restart Count:  0
-        Limits:
-          cpu:     500m
-          memory:  512Mi
-        Requests:
-          cpu:     250m
-          memory:  250Mi
-        Environment:
-          info.app.version:  2.0.0
-        Mounts:
-          /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-6qc79 (ro)
-    ```
-22. kubectl describe metadata-env - since limits are not specified, this will consume upto node’s available resources on load increase
-```
-    metdata:
-        Container ID:   docker://9c8f33f423611fad4bb3d35e73273b134583367313cc5e976d3ed5ae424ebe34
-        Image:          sunitparekh/metadata:v1.0
-        Image ID:       docker-pullable://sunitparekh/metadata@sha256:88c8333bf43df2c9ca3ac47e7d69dd3d19095858b69f328f2eb4f083cc717191
-        Port:           8080/TCP
-        Host Port:      0/TCP
-        State:          Running
-            Started:      Sat, 11 Dec 2021 14:47:45 +0530
-        Ready:          True
-        Restart Count:  0
-        Environment:
-            info.app.version:  2.0.0
-        Mounts:
-            /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-mhdcl (ro)
+kind: Pod
+metadata:
+    name: web-app
+spec:
+    securityContext:
+        runAsUser: 1000 #all conatainers within this pod will run with user id 1000
+    containers:
+        - name: ubuntu
+          image: ubuntu
+          command: ["sleep", "1000"]
+          securityContext:
+            runAsUser: 2000 #the user id for this container would be 2000 overrinding 1000
+            capabilities: 
+                add: ["MAC_ADMIN", "KILL"]
 ```
 
-## Exercise - 3
-
-1. kubectl apply -f Ex-3-ReplicaSets/metadata-rs.yaml -> replicaset.apps/metadata-rs created
-2. kubectl get rs                                                                                                                                                                               
-    NAME          DESIRED   CURRENT   READY   AGE
-    metadata-rs   2         2         0       19s
-3. Kubectl get pods -o wide
-    NAME                READY   STATUS    RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
-    metadata-rs-9c56h   1/1     Running   0          59s   172.17.0.4   minikube   <none>           <none>
-    metadata-rs-vgs69   1/1     Running   0          59s   172.17.0.3   minikube   <none>           <none>
-4. kubectl port-forward pod/metadata-rs-9c56h 9090:8080 - hit localhost:9090/actuator/health - {"status":"UP"}
-5. kubectl port-forward pod/metadata-rs-vgs69 9091:8080 - hit localhost:9091/actuator/health - {"status":"UP"}
-6. kubectl delete rs/metadata-rs - replicaset.apps "metadata-rs" deleted - deletes above 2 pods too
-7. Changing readinessProbe’s initialDelaySeconds to 2 from 20 and periodSeconds to 1 from 5
-8. Changing livenessProbe’s initialDelaySeconds to 2 from 20 and periodSeconds to 1 from 5
-9. kubectl apply -f Ex-3-ReplicaSets/metadata-rs.yaml -> replicaset.apps/metadata-rs created
-10. kubectl get rs                                                                                                                                                                               
-    NAME          DESIRED   CURRENT   READY   AGE
-    metadata-rs   2         2         0       19s
-11. Kubectl get pods -o wide
-    NAME                READY   STATUS           RESTARTS                AGE   IP             NODE       NOMINATED NODE   READINESS GATES
-    metadata-rs-clxfh   0/1     CrashLoopBackOff    6 (73s ago)          5m1s   172.17.0.4    minikube   <none>           <none>
-    metadata-rs-hrqnb   0/1     CrashLoopBackOff    6 (73s ago)          5m1s   172.17.0.3    minikube   <none>           <none>
-12. kubectl get events --sort-by='.metadata.creationTimestamp' --field-selector involvedObject.kind=Pod -w
-    LAST SEEN   TYPE      REASON          OBJECT                  MESSAGE
-        115s        Warning   Unhealthy       pod/metadata-rs-clxfh   Liveness probe failed: Get "http://172.17.0.3:8080/actuator/info": dial tcp 172.17.0.3:8080: connect: connection refused
-        115s        Warning   Unhealthy       pod/metadata-rs-hrqnb   Liveness probe failed: Get "http://172.17.0.4:8080/actuator/info": dial tcp 172.17.0.4:8080: connect: connection refused
-        115s        Warning   Unhealthy       pod/metadata-rs-hrqnb   Readiness probe failed: Get "http://172.17.0.4:8080/actuator/health": dial tcp 172.17.0.4:8080: connect: connection refused
-        115s        Warning   Unhealthy       pod/metadata-rs-clxfh   Readiness probe failed: Get "http://172.17.0.3:8080/actuator/health": dial tcp 172.17.0.3:8080: connect: connection refused
-        115s        Normal    Killing         pod/metadata-rs-hrqnb   Container metdata failed liveness probe, will be restarted
-        115s        Normal    Killing         pod/metadata-rs-clxfh   Container metdata failed liveness probe, will be restarted
-13. kubectl delete rs/metadata-rs - replicaset.apps "metadata-rs" deleted - deletes above 2 pods too
-
-## Excercise 4 & 5
-
-1. kubectl apply -f Ex-4-Services/metadata-svc.yaml -> service/metadata-svc created
-2. kubectl apply -f Ex-4-Services/metadata-rs.yaml -> replicaset.apps/metadata-rs created
-3. kubectl get pods -o wide                                     
-    NAME                READY   STATUS    RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
-    metadata-rs-8rzkf   1/1     Running   0          90s   172.17.0.4   minikube   <none>           <none>
-    metadata-rs-mh7dx   1/1     Running   0          90s   172.17.0.3   minikube   <none>           <none>
-4. kubectl get svc                                              
-    NAME           TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-    kubernetes     ClusterIP   10.96.0.1       <none>        443/TCP          12h
-    metadata-svc   NodePort    10.110.70.144   <none>        8080:32323/TCP   70s
-5. kubectl get endpoints                                        
-    NAME           ENDPOINTS                         AGE
-    kubernetes     192.168.49.2:8443                 12h
-    metadata-svc   172.17.0.3:8080,172.17.0.4:8080   104s
-6. kubectl apply -f https://k8s.io/examples/admin/dns/dnsutils.yaml -> created a pod to test svc dns within cluster
-7. kubectl exec -it dnsutils — bin/sh
-8. apt install curl
-9. curl metadata-svc:8080/actuator/info
-10. exit
-11. minikube ip - 192.168.49.2
-12. curl 192.168.49.2:32323/metadata -> [] as there is no entry there yet
-13. curl --header “Content-Type: application/json” --request POST --data ‘{“group”: “voyager”, “name”: “city”, “value”:”Pune”}’ http://192.168.49.2:32323/metadata
-14. curl 192.168.49.2:32323/metadata  -> gives different no. of entries every time because of in-memory datastore
-15. step# 12 and 13 not working for me, so had to do port-forwarding of service:
-    1. kubectl port-forward svc/metadata-svc 9090:8080
-    2. curl 127.0.0.1:9090/metadata -> []
-    3. curl --header “Content-Type: application/json” --request POST --data ‘{“group”: “voyager”, “name”: “city”, “value”:”Pune”}’ http://127.0.0.1:9090/metadata
-    4. curl --header "Content-Type: application/json" --request POST --data '{"group": "voyager", "name": "city", "value":"Bangalore"}' http://127.0.0.1:9090/metadata
-    5. curl 127.0.0.1:9090/metadata -> [{"group":"voyager","lastUpdatedTs":"2021-12-11T17:39:32.527","name":"city","id":"61b4e2504cedfd0001613899"},{"group":"voyager","lastUpdatedTs":"2021-12-11T17:39:32.527","name":"city","id":"61b4e2494cedfd0001613894"}]
-16. kubectl delete -f Ex-4-Services/metadata-rs.yaml -> replicaset.apps "metadata-rs" deleted
-17. kubectl delete -f Ex-4-Services/metadata-svc.yaml -> service "metadata-svc" deleted
-18. kubectl delete -f https://k8s.io/examples/admin/dns/dnsutils.yaml -> pod "dnsutils" deleted
-19. kubectl apply -f Ex-4-Services/mongo-svc.yaml -> service/mongo created
-20. kubectl get svc                                              
-    NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)     AGE
-    kubernetes   ClusterIP   10.96.0.1      <none>        443/TCP     12h
-    mongo        ClusterIP   10.97.28.231   <none>        27017/TCP   59s
-21. kubectl apply -f Ex-4-Services/mongo-pod.yaml -> pod/mongo-pod created
-22. kubectl get pods -o wide                                     
-    NAME        READY   STATUS    RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
-    mongo-pod   1/1     Running   0          68s   172.17.0.3   minikube   <none>           <none>
-23. kubectl get endpoints                                        
-    NAME         ENDPOINTS           AGE
-    kubernetes   192.168.49.2:8443   12h
-    mongo        172.17.0.3:27017    2m21s
-24. kubectl apply -f Ex-4-Services/metadata-svc.yaml -> service/metadata-svc created
-25. kubectl apply -f Ex-4-Services/metadata-rs.yaml -> replicaset.apps/metadata-rs created
-26. kubectl get svc                                              
-    NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)     AGE
-    kubernetes   ClusterIP   10.96.0.1      <none>        443/TCP     12h
-    mongo        ClusterIP   10.97.28.231   <none>        27017/TCP   59s
-    metadata-svc   NodePort    10.107.64.68   <none>        8080:32323/TCP   68s
-27. kubectl apply -f Ex-4-Services/mongo-pod.yaml -> pod/mongo-pod created
-28. kubectl get pods -o wide                                     
-    NAME        READY   STATUS    RESTARTS   AGE   IP           NODE       NOMINATED NODE   READINESS GATES
-    mongo-pod   1/1     Running   0          68s   172.17.0.3   minikube   <none>           <none>
-    metadata-rs-55cnp   1/1     Running   0          71s   172.17.0.4   minikube   <none>           <none>
-    metadata-rs-tlqpt   1/1     Running   0          71s   172.17.0.5   minikube   <none>           <none>
-29. kubectl get endpoints                                        
-    NAME         ENDPOINTS           AGE
-    kubernetes   192.168.49.2:8443   12h
-    mongo        172.17.0.3:27017    2m21s
-    metadata-svc   172.17.0.4:8080,172.17.0.5:8080   82s
-30. kubectl port-forward svc/metadata-svc 9090:8080
-31. curl --header "Content-Type: application/json" --request POST --data '{"group": "voyager", "name": "city", "value":"Bangalore"}' http://127.0.0.1:9090/metadata
-32. curl --header "Content-Type: application/json" --request POST --data '{"group": "voyager", "name": "city", "value”:”Pune}’ http://127.0.0.1:9090/metadata
-33. curl 127.0.0.1:9090/metadata -> [{"group":"voyager","lastUpdatedTs":"2021-12-11T17:39:32.527","name":"city","id":"61b4e2504cedfd0001613899"},{"group":"voyager","lastUpdatedTs":"2021-12-11T17:39:32.527","name":"city","id":"61b4e2494cedfd0001613894"}]
-34. kubectl delete -f Ex-4-Services/metadata-rs.yaml -> replicaset.apps "metadata-rs" deleted
-35. kubectl delete -f Ex-4-Services/mongo-pod.yaml -> pod "mongo-pod" deleted
-36. kubectl delete -f Ex-4-Services/mongo-svc.yaml -> service "mongo" deleted
-37. kubectl delete -f Ex-4-Services/metadata-svc.yaml -> service "metadata-svc" deleted
-
-## Excercise 6
-
-1. kubectl apply -f Ex-6-Deployment/mongo-svc.yaml -> service/mongo created
-2. kubectl apply -f Ex-6-Deployment/mongo.yaml -> deployment.apps/mongo created
-3. kubectl apply -f Ex-6-Deployment/metadata-svc.yaml -> service/metadata-svc created
-4. kubectl apply -f Ex-6-Deployment/metadata.yaml -> deployment.apps/metadata created
-5. kubectl get svc                                              
-    NAME           TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-    kubernetes     ClusterIP   10.96.0.1       <none>        443/TCP          13h
-    metadata-svc   NodePort    10.106.94.123   <none>        8080:32323/TCP   66s
-    mongo          ClusterIP   10.99.205.244   <none>        27017/TCP        6m29s
-6. kubectl get pods -o wide                                     
-    NAME                        READY   STATUS    RESTARTS   AGE     IP           NODE       NOMINATED NODE   READINESS GATES
-    metadata-6fdd79b74f-44hj5   1/1     Running   0          53s     172.17.0.5   minikube   <none>           <none>
-    metadata-6fdd79b74f-xlhds   1/1     Running   0          53s     172.17.0.4   minikube   <none>           <none>
-    mongo-67fb584bd8-j4jwf      1/1     Running   0          3m33s   172.17.0.3   minikube   <none>           <none>
-7. kubectl get rs                                               
-    NAME                  DESIRED   CURRENT   READY   AGE
-    metadata-6fdd79b74f   2         2         2       93s
-    mongo-67fb584bd8      1         1         1       4m13s
-8. kubectl port-forward svc/metadata-svc 9090:8080
-9. curl localhost:9090/actuator/info -> {“app":{"version":"10.0.0","name":"Metadata Service","description":"Metadata service also known as config service. It hold the metadata/config required across different services."}}
-10. curl localhost:9090/actuator/health -> {“status":"UP"}
-11. curl localhost:9090/metadata -> []
-12. curl --header "Content-Type: application/json" --request POST --data '{"group": "voyager", "name": "city", "value":"Bangalore"}' http://127.0.0.1:9090/metadata -> {“id":"61b4ef37cff47e0001fcc9ba","message":"Successfully saved metadata."}
-13. curl --header "Content-Type: application/json" --request POST --data '{"group": "voyager", "name": "city", "value”:”Pune”}’ http://127.0.0.1:9090/metadata -> {“id":"61b4ef8bcff47e0001fcc9bf","message":"Successfully saved metadata."}
-14. curl localhost:9090/metadata -> [{“group":"voyager","lastUpdatedTs":"2021-12-11T18:36:19.396","name":"city","id":"61b4ef8bcff47e0001fcc9bf"},{"group":"voyager","lastUpdatedTs":"2021-12-11T18:36:19.399","name":"city","id":"61b4ef37cff47e0001fcc9ba"}]
-15. Changed sunitparekh/metadata:v1.0 -> sunitparekh/metadata:v3.0 in metadata.yaml
-16. kubectl apply -f Ex-6-Deployment/metadata.yaml -> deployment.apps/metadata configured
-17. Change mongo-db version
-18. kubectl apply -f Ex-6-Deployment/mongo.yaml -> deployment.apps/metadata configured
-19. kubectl delete -f Ex-6-Deployment/metadata.yaml -> deployment.apps "metadata" deleted
-20. k8-rotc git:(master) kubectl delete -f Ex-6-Deployment/metadata-svc.yaml -> service "metadata-svc" deleted
-21. k8-rotc git:(master) kubectl delete -f Ex-6-Deployment/mongo.yaml -> deployment.apps "mongo" deleted
-22. k8-rotc git:(master) kubectl delete -f Ex-6-Deployment/mongo-svc.yaml -> service "mongo" deleted
-
-
-## Exercise 7
-1. minikube ssh
-2. mkdir mongodb
-3. cd mongoldb
-4. mkdir data
-5. kubectl apply -f Ex-7-Volumes/mongo-svc.yaml -> service/mongo created
-6. kubectl apply -f Ex-7-Volumes/mongo.yaml -> deployment.apps/mongo created
-7. minikube ssh
-8. ls -la mongodb/data/ -> files created by mongo db app
-```
-    drwxr-xr-x 4    999 docker  4096 Dec 12 04:01 .
-    drwxr-xr-x 3 docker docker  4096 Dec 12 03:57 ..
-    -rw------- 1    999 docker    46 Dec 12 03:59 WiredTiger
-    -rw------- 1    999 docker    21 Dec 12 03:59 WiredTiger.lock
-    -rw------- 1    999 docker  1246 Dec 12 04:01 WiredTiger.turtle
-    -rw------- 1    999 docker 61440 Dec 12 04:01 WiredTiger.wt
-    -rw------- 1    999 docker  4096 Dec 12 03:59 WiredTigerLAS.wt
-    -rw------- 1    999 docker 20480 Dec 12 04:00 _mdb_catalog.wt
-    -rw------- 1    999 docker 20480 Dec 12 04:00 collection-0-3240096960546485121.wt
-    -rw------- 1    999 docker 20480 Dec 12 04:00 collection-2-3240096960546485121.wt
-    -rw------- 1    999 docker  4096 Dec 12 03:59 collection-4-3240096960546485121.wt
-    drwx------ 2    999 docker  4096 Dec 12 04:02 diagnostic.data
-    -rw------- 1    999 docker 20480 Dec 12 04:00 index-1-3240096960546485121.wt
-    -rw------- 1    999 docker 20480 Dec 12 04:00 index-3-3240096960546485121.wt
-    -rw------- 1    999 docker  4096 Dec 12 03:59 index-5-3240096960546485121.wt
-    -rw------- 1    999 docker 12288 Dec 12 04:01 index-6-3240096960546485121.wt
-    drwx------ 2    999 docker  4096 Dec 12 03:59 journal
-    -rw------- 1    999 docker     2 Dec 12 03:59 mongod.lock
-    -rw------- 1    999 docker 20480 Dec 12 04:01 sizeStorer.wt
-    -rw------- 1    999 docker   114 Dec 12 03:59 storage.bson
-```
-9. kubectl apply -f Ex-7-Volumes/metadata-svc.yaml -> service/metadata-svc created
-10. kubectl apply -f Ex-7-Volumes/metadata.yaml -> deployment.apps/metadata created
-11. kubectl get svc                                              
-    NAME           TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
-    kubernetes     ClusterIP   10.96.0.1        <none>        443/TCP          23h
-    metadata-svc   NodePort    10.100.192.181   <none>        8080:32323/TCP   34s
-    mongo          ClusterIP   10.106.22.162    <none>        27017/TCP        4m29s
-12. kubectl get pods -o wide                                     
-    NAME                        READY   STATUS    RESTARTS   AGE     IP           NODE       NOMINATED NODE   READINESS GATES
-    metadata-69b5c966c5-98wd6   1/1     Running   0          38s     172.17.0.4   minikube   <none>           <none>
-    metadata-69b5c966c5-hhtbf   1/1     Running   0          38s     172.17.0.5   minikube   <none>           <none>
-    mongo-fb89c49b7-qfg7f       1/1     Running   0          4m30s   172.17.0.3   minikube   <none>           <none>
-13. kubectl get endpoints                                        
-    NAME           ENDPOINTS                         AGE
-    kubernetes     192.168.49.2:8443                 23h
-    metadata-svc   172.17.0.4:8080,172.17.0.5:8080   88s
-    mongo          172.17.0.3:27017                  5m23s
-8. kubectl port-forward svc/metadata-svc 9090:8080
-9. curl localhost:9090/actuator/info -> {"app":{"version":"10.0.0","name":"Metadata Service","description":"Metadata service also known as config service. It hold the metadata/config required across different services."}}
-10. curl localhost:9090/actuator/health -> {"status":"UP","details":{"diskSpace":{"status":"UP","details":{"total":62725623808,"free":52071821312,"threshold":10485760}},"mongo":{"status":"UP","details":{"version":"4.2.6"}}}}
-11. curl --header "Content-Type: application/json" --request POST --data '{"group": "voyager", "name": "city", "value":"Bangalore"}' http://127.0.0.1:9090/metadata -> {“id":"61b5761c4cedfd0001d83975","message":"Successfully saved metadata."}
-12. curl --header "Content-Type: application/json" --request POST --data '{"group": "voyager", "name": "city", "value”:”Pune”}’ http://127.0.0.1:9090/metadata -> {“id":"61b5765e4cedfd0001d83976","message":"Successfully saved metadata."}
-13. curl localhost:9090/metadata -> [{"lastUpdatedTs":"2021-12-12T04:11:20.97862","group":"voyager","name":"city","id":"61b5765e4cedfd0001d83976"},{"lastUpdatedTs":"2021-12-12T04:11:20.980149","group":"voyager","name":"city","id":"61b5761c4cedfd0001d83975"}]
-14. Change mongo-db version from 4.2.6 to 4.2.7
-15. kubectl port-forward svc/metadata-svc 9090:8080
-16. curl localhost:9090/actuator/health -> {"status":"UP","details":{"diskSpace":{"status":"UP","details":{"total":62725623808,"free":51765358592,"threshold":10485760}},"mongo":{"status":"UP","details":{"version":"4.2.7"}}}}
-17. curl localhost:9090/metadata -> [{"lastUpdatedTs":"2021-12-12T04:11:20.97862","group":"voyager","name":"city","id":"61b5765e4cedfd0001d83976"},{"lastUpdatedTs":"2021-12-12T04:11:20.980149","group":"voyager","name":"city","id":"61b5761c4cedfd0001d83975"}]
-
-## Excercise 8
-1. minikube ssh
-2. mkdir mongo-pv
-3. cd mongo-pv
-4. mkdir data
-5. kubectl apply -f Ex-8-PV-PVC/pv.yaml -> persistentvolume/mongo-pv created
-6. kubectl apply -f Ex-8-PV-PVC/pvc.yaml -> persistentvolume/mongo-pvc created
-7. kubectl apply -f Ex-8-PV-PVC/mongo.yaml -> deployment.apps/mongo created
-8. kubectl apply -f Ex-8-PV-PVC/mongo-svc.yaml -> service/mongo created
-9. kubectl apply -f Ex-8-PV-PVC/metadata.yaml -> deployment.apps/metadata created
-10. kubectl apply -f Ex-8-PV-PVC/metadata-svc.yaml -> service/metadata-svc created
-11. kubectl get pv                                               
-    NAME       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM               STORAGECLASS   REASON   AGE
-    mongo-pv   500Mi      RWO            Retain           Bound    default/mongo-pvc   manual                  12m
-12. kubectl get pvc                                              
-    NAME        STATUS   VOLUME     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-    mongo-pvc   Bound    mongo-pv   500Mi      RWO            manual         12m
-13. kubectl port-forward svc/metadata-svc 9090:8080
-14. curl localhost:9090/actuator/info -> {"app":{"version":"10.0.0","name":"Metadata Service","description":"Metadata service also known as config service. It hold the metadata/config required across different services."}}
-15. curl localhost:9090/actuator/health -> {"status":"UP","details":{"diskSpace":{"status":"UP","details":{"total":62725623808,"free":52071821312,"threshold":10485760}},"mongo":{"status":"UP","details":{"version":"4.2.6"}}}}
-16. curl --header "Content-Type: application/json" --request POST --data '{"group": "voyager", "name": "city", "value":"Bangalore"}' http://127.0.0.1:9090/metadata -> {“id":"61b5827f4cedfd000175064d","message":"Successfully saved metadata."}
-17. curl --header "Content-Type: application/json" --request POST --data '{"group": "voyager", "name": "city", "value”:”Pune”}’ http://127.0.0.1:9090/metadata -> {“id":"61b5827c4cedfd000175064c","message":"Successfully saved metadata."}
-18. curl localhost:9090/metadata -> [{"group":"voyager","lastUpdatedTs":"2021-12-12T05:03:04.842512","name":"city","id":"61b5827f4cedfd000175064d"},{"group":"voyager","lastUpdatedTs":"2021-12-12T05:03:04.843953","name":"city","id":"61b5827c4cedfd000175064c"}]
-
-## Exercise 9
-1. kubectl apply -f Ex-9-Volumes/sc.yaml
-2. kubectl apply -f Ex-9-Volumes/pvc.yaml
-3. kubectl apply -f Ex-9-Volumes/mongo.yaml
-4. kubectl apply -f Ex-9-Volumes/mongo-svc.yaml
-5. kubectl apply -f Ex-9-Volumes/metdata.yaml
-6. kubectl apply -f Ex-9-Volumes/metadata-svc.yaml
-7. Insert 2 records
-8. /metadata has 2 records now
-9. kubectl delete deployment metadata
-10. kubectl delete deployment mongo
-11. kubectl delete svc metadata-svc
-12. kubectl delete svc mongo
-13. Kubectl delete pvc mongo-pvc
-14. Volume - status detached
-15. kubectl delete pv <pv-name>
-16. Volume still there
+### Service Accounts
+1. Two types of account in K8: User a/c and Service a/c.
+2. User account: used by humans, Service account: for automated tasks(by machines)
+3. User account types (not limited to): Admin (to perform admin tasks), Developer(to access the cluster and deploy apps)
+4. Service account types are used my an app to interact with k8 cluster, examples:
+   1. A monitoring app like Prometheus uses service a/c to poll k8 metrics/logs to come up with performance metrics
+   2. An automated build tool like Jenkins uses service a/c to deploy app on the cluster
+5. To create a service a/c: `kubectl create serviceaccount <account-name>`
+6. To view all service a/c: `kubectl get service a/c`
+7. On creation of service a/c a token is created automatically: `kubectl descrive serviceaccount <acocunt-name>` - see Tokens
+8. The above token can be used by the external apps for authentication of kube-api as a bearer token.
+9. Token is stored as a secret object.
+10. To view the secret object: `kubectl describe secret <secret-name>`
+11. Steps:
+    1. create a service a/c
+    2. assign role based permissions/access control mechanisms
+    3. export the token
+    4. use it in external app while making kube api requests
+12. If the external app itself is hosted in K8 cluster, the exporting can be made simpler by mounting the secret as a volume to the application.
+13. To view the secret files in the pod (which has secret mounted as volume):
+    1. exec into the pod: kubectl exec -it <pod-name>
+    2. ls /var/run/secrets/kubernetes.io/serviceaccount -> ca.crt, namespace, token
+    3. cat /var/run/secrets/kubernetes.io/serviceaccount/token
+14. Default service accounts are mounted automatically to every pods, which has limited permissions.
+15. To assign a service account: spec/serviceAccountName: <service a/c name>
+16. To prevent k8 from automatically mounting default service a/c : spec/automountServiceAccountToken: false
