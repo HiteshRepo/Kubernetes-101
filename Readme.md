@@ -550,3 +550,76 @@ spec:
 8. Taints and tolerations do not guarantee that certain pods will be scheduled on certain nodes only. They enable nodes to accept certain pods but those pods can very well be placed on other nodes. as well.
 9. Scheduler does not place any pod on master node: because when K8 cluster is first set up a taint is applied on the master node automatically that prevents placing of other pods on master node.
 10. To see the above taint in master node: `kubectl describe node kubemaster | grep Taint`
+
+### Node Selectors
+1. There might be use cases where we will require placing certain pods only certain nodes.
+2. For example, 
+   1. There are 3 nodes (2 nodes with low resources and 1 node with high resources).
+   2. We would like to place pods running high processing apps in node with higher resources.
+3. The default setup places pods in nodes based on load balancing and resource availability strategy.
+4. Also, with taints and tolerations, we can guarantee nodes to accept certain pods but not guarantee placing pods on certain nodes.
+5. A simple way to achieve this is using Node Selectors.
+6. An example of Pod configuration using node selector 
+```
+apiVersion: v1
+kind: Pod
+metadata:
+    name: myapp-pod
+spec:
+    containers:
+        - name: data-processor
+          image: data-processor
+    nodeSelector:
+        size: Large
+```
+7. The key value pair (size: Large) are in fact labels assigned to nodes. Scheduler uses these to assign pods to specific Nodes.
+8. To label a node: `kubectl label nodes <node-name> <key>:<value>`
+9. Limitations:
+   1. Cannot serve complex requirements: if we want to place pod on a large or medium nodes instead of small.
+10. Node affinity is the solution here.
+
+### Node Affinity
+1. Complex requirements can be executed in Node Affinity.
+2. The example used in Node Selectors can be re-defined as this:
+```
+apiVersion: v1
+kind: Pod
+metadata:
+    name: myapp-pod
+spec:
+    containers:
+        - name: data-processor
+          image: data-processor
+    affinity:
+        nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorsTerms:
+                - matchExpressions:
+                  - key: size
+                    operator: In #NotIn, Exists,...
+                    values:
+                    - Large
+```
+3. If node affinity does not match any of the rules: 
+4. Node affinity types:
+   1. requiredDuringSchedulingIgnoredDuringExecution: Pod will not be scheduled if rules do not match (Pods remain in pending state), but pods already running are ignored (irrespective of the rules).
+   2. preferredDuringSchedulingIgnoredDuringExecution: Pod will be scheduled in available node if rules do not match, and pods already running are ignored (irrespective of the rules).
+   3. requiredDuringSchedulingRequiredDuringExecution: Pod will not be scheduled if rules do not match (Pods remain in pending state), and pods already running are evicted if rules do not match.
+
+### Node Affinity vs Taints and Toleration
+1. Lets' take a use case
+   1. There are 3 nodes: Red, blue and green. There are other nodes as well.
+   2. There are 3 pods: Red, blue and green. There are other pods as well.
+   3. Our aim is to put red pod in red node, green pod in green node and blue pod in blue node.
+   4. We also do not want any other pods to be placed in our (red, green and blue) nodes.
+   5. We also do not want our pods to be placed on other nodes.
+2. How to achieve this:
+   1. Lets' try with Taints and Toleration first
+      1. We apply taints red, blue and green to nodes.
+      2. Then we apply tolerations red, blue and green to pods.
+      3. This will help in placing pods with appropriate tolerance end up in corresponding tainted node but this does nt guarantee pod ending up in nodes that do not have taints.
+   2. Lets' try with Node Affinity
+      1. We apply key-value pair labels on nodes.
+      2. We then configure nodes with appropriate affinity.
+      3. This will help us in placing pods in appropriate nodes but other pods also might end up in our nodes.
+3. So a combination of both Taints and Toleration and node affinity is used. 

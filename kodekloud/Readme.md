@@ -121,3 +121,16 @@
 9. Remove the taint on controlplane, which currently has the taint effect of NoSchedule: `kubectl taint nodes controlplane node-role.kubernetes.io/master:NoSchedule-`
 10. What is the state of pod mosquito now?: Running
 11. Which node is pod mosquito placed now?: controlplane
+
+### Node Affinity
+
+1. How many Labels exist on node node01?: `kubectl describe nodes node01`: Check labels section.
+2. Apply a label color=blue to node node01: `kubectl label nodes node01 color=blue`.
+3. Create a new deployment named blue with the nginx image and 3 replicas: Refer kodekloud/nodeaffinity/blue-deployment.yaml.
+4. Which nodes can the pods for the blue deployment be placed on?: `kubectl describe nodes <node-name> | grep Taints`
+5. Set Node Affinity to the deployment to place the pods on node01 only.: Refer kodekloud/nodeaffinity/blue-deployment-with-affinity.yaml
+6. Which nodes are the pods placed on now?: `kubectl get pods -o wide`
+7. Create a new deployment named red with the nginx image and 2 replicas, and ensure it gets placed on the controlplane node only.: Refer kodekloud/nodeaffinity/red-deployment-with-affinity.yaml.
+
+### Node Affinity vs Taints and Toleration
+1. 
