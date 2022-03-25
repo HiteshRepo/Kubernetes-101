@@ -108,3 +108,16 @@
 1. A pod called rabbit is deployed. Identify the CPU requirements set on the Pod: `kuebctl describe pod <pod-name>`: check Containers/Requests/cpu
 2. Another pod called elephant has been deployed in the default namespace. It fails to get to a running state. Inspect this pod and identify the Reason why it is not running:  `kuebctl describe pod <pod-name>`: check Containers/Last State/Reason: The status OOMKilled indicates that it is failing because the pod ran out of memory. Identify the memory limit set on the POD
 3. The elephant pod runs a process that consume 15Mi of memory. Increase the limit of the elephant pod to 20Mi.: Refer kodekloud/resources/elephant.yaml
+
+### Taints and Tolerations
+1. How many nodes exist on the system: `kubectl get nodes`
+2. Do any taints exist on node01 node?: `kubectl describe node node01 | grep Taints`
+3. Create a taint on node01 with key of spray, value of mortein and effect of NoSchedule: `kubectl taint node node01 spray=mortein:NoSchedule`
+4. Create a new pod with the nginx image and pod name as mosquito: Refer kodekloud/taintsandtolerations/mosquito.yaml
+5. What is the state of the POD (mosquito)?: `kubectl describe pod mosquito`: Pending
+6. Why do you think the pod is in a pending state?: POD mosquito cannot tolerate taint mortein
+7. Create another pod named bee with the nginx image, which has a toleration set to the taint mortein: Refer kodekloud/taintsandtolerations/bee.yaml
+8. Do you see any taints on controlplane node?: `kubectl describe node controlplane | grep Taints`: NoSchedule
+9. Remove the taint on controlplane, which currently has the taint effect of NoSchedule: `kubectl taint nodes controlplane node-role.kubernetes.io/master:NoSchedule-`
+10. What is the state of pod mosquito now?: Running
+11. Which node is pod mosquito placed now?: controlplane

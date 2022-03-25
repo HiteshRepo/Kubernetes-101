@@ -522,3 +522,31 @@ spec:
 10. when pod tries to go beyond the limit cpu, k8 tries to throttle the cpu so that pod will not be able to consume more cpu
 11. when pod tries to go beyond the limit mem, k8 terminates the pod
 12. The status OOMKilled indicates that it is failing because the pod ran out of memory. Identify the memory limit set on the POD
+
+### Taints and Tolerations
+1. Taints and tolerations are used to set restrictions on what pods can be scheduled on which node.
+2. They have nothing to do with security.
+3. Lets' take a use case:
+   1. We have 4 pods: A, B, C, D
+   2. We have 3 nodes: Node1, Node2, Node3
+   3. Now if there are no taints and tolerations configured, then A, B, C, D will be placed on nodes via load balancing/resource management
+   4. But suppose we want to place pods like D (running same as in D) to be scheduled only on Node1
+   5. Then we apply a taint on Node1, so since until now none of the pods have any sort of tolerations configured, none of the pods will be scheduled in Node1
+   6. Now we can enable pod D to be placed on Node1, by adding a toleration on pod D.
+4. Taints are placed on nodes and Tolerations are placed on pods.
+5. Apply Taints to nodes: `kubectl taint node <node-name> <key>=<value>:<taint-effect>`
+6. Taint-Effect determine what happens to the pod if they DO NOT TOLERATE this taint, there are 3 taint-effects
+   1. NoSchedule: Pods will not be scheduled
+   2. PreferNoSchedule: K8 will try not to schedule pods but with no guarantee
+   3. NoExecute: New pods will not be scheduled, but if already there are few pods in the node they will be evicted.
+7. Apply Tolerations to pods (@ spec/containers):
+    ```
+    tolerations:
+        - key: "app"
+          operator: "Equal"
+          value: "blue"
+          effect: "NoSchedule"
+    ```
+8. Taints and tolerations do not guarantee that certain pods will be scheduled on certain nodes only. They enable nodes to accept certain pods but those pods can very well be placed on other nodes. as well.
+9. Scheduler does not place any pod on master node: because when K8 cluster is first set up a taint is applied on the master node automatically that prevents placing of other pods on master node.
+10. To see the above taint in master node: `kubectl describe node kubemaster | grep Taint`
