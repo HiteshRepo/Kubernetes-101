@@ -132,5 +132,13 @@
 6. Which nodes are the pods placed on now?: `kubectl get pods -o wide`
 7. Create a new deployment named red with the nginx image and 2 replicas, and ensure it gets placed on the controlplane node only.: Refer kodekloud/nodeaffinity/red-deployment-with-affinity.yaml.
 
-### Node Affinity vs Taints and Toleration
-1. 
+### Multi Container Pods
+1. Identify the number of containers created in the red pod: `kubectl describe pod red`
+2. Identify the name of the containers running in the blue pod: `kubectl describe pod blue`
+3. Create a multi-container pod with 2 containers.
+4. Use the spec given below, If the pod goes into the crashloopbackoff then add sleep 1000 in the lemon container: Refer kodekloud/multicontainer/yellow.yaml
+5. The application outputs logs to the file /log/app.log. View the logs and try to identify the user having issues with Login.:  `kubectl exec app -- cat /log/app.log   -n elastic-stack`
+6. Edit the pod to add a sidecar container to send logs to Elastic Search. Mount the log volume to the sidecar container
+`kubectl -n elastic-stack get pod -o yaml > app.yaml`
+Refer kodekloud/multiontainer/elastic-stack/app.yaml
+7. aa

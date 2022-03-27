@@ -622,4 +622,32 @@ spec:
       1. We apply key-value pair labels on nodes.
       2. We then configure nodes with appropriate affinity.
       3. This will help us in placing pods in appropriate nodes but other pods also might end up in our nodes.
-3. So a combination of both Taints and Toleration and node affinity is used. 
+3. So a combination of both Taints and Toleration and node affinity is used.
+
+### Multi Container Pods
+1. Microservices enable us to develop small, independent, reusable code.
+2. Also, it helps us in scaling them.
+3. However, at times two services are required to work together such as a web server and a log agent.
+4. We want a web server and a log agent paired together, we do not want to merge them and bloat the code though.
+5. So we need multi-container pods that share same lifecycle, network space and storage volumes.
+6. An example of multi-container setup looks something like below:
+```
+apiVersion: v1
+kind: Pod
+metadata:
+    name: simple-webapp
+    labels:
+        name: simple-webapp
+spec:
+    containers:
+    - name: simple-webapp
+      image: simple-webapp
+      ports:
+        - containerPort: 8080
+    - name: log-agent
+      image: log-agent
+```
+7. Common design patterns:
+   1. SIDECAR: we can run a logging agent along with the main app that will push logs on to a centralized logs-storage  
+   2. ADAPTER: sometimes each application produces different format of logs and hence we need to format them before pushing them to centralized system
+   3. AMBASSADOR: very often, it is required to connect to different databases based on env. So based on the env we connect to that DB instance. This logic can be extracted out to an ambassador container which can act as a proxy.

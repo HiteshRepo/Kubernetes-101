@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: yellow
+spec:
+  containers:
+    - name: lemon
+      image: busybox
+      command: [ "sleep" ]
+      args: [ "5000" ]
+    - name: gold
+      image: redis
