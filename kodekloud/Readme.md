@@ -141,4 +141,9 @@
 6. Edit the pod to add a sidecar container to send logs to Elastic Search. Mount the log volume to the sidecar container
 `kubectl -n elastic-stack get pod -o yaml > app.yaml`
 Refer kodekloud/multiontainer/elastic-stack/app.yaml
-7. aa
+
+### Readiness and Liveness probe
+1. Update the newly created pod 'simple-webapp-2' with a readinessProbe using the given spec: Refer kodekloud/readinessNliveliness/simple-webapp-2.yaml
+2. What would happen if the application inside container on one of the PODs crashes?: The crashed container inside the pod is restarted
+3. What would happen if the application inside container on one of the PODs freezes?: New Users are impacted
+4. Update both the pods with a livenessProbe using the given spec: Refer kodekloud/readinessNliveliness/simple-webapp-2.yaml and kodekloud/readinessNliveliness/simple-webapp-1.yaml

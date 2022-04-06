@@ -651,3 +651,139 @@ spec:
    1. SIDECAR: we can run a logging agent along with the main app that will push logs on to a centralized logs-storage  
    2. ADAPTER: sometimes each application produces different format of logs and hence we need to format them before pushing them to centralized system
    3. AMBASSADOR: very often, it is required to connect to different databases based on env. So based on the env we connect to that DB instance. This logic can be extracted out to an ambassador container which can act as a proxy.
+
+### Readiness and Liveness probe
+1. A pod has a pod status.
+2. The pod status states where is the pod in its lifecycle.
+3. If pod is first created, it is in pending state. This is when the scheduler tries to figure out where to place the pod.
+4. If scheduler cannot find a node to place the pod, then it remains in pending state.
+5. Once the pod is scheduled, it goes into containercreating status, it is when the image is pulled and containers are created.
+6. Once all the containers in the pod starts, pod status changes to running state.
+7. The pod status remains in running state, unless program in the container is completed or the pod is terminated. 
+8. So complete and terminating are the other pod statuses.
+9. Pod conditions
+   1. PodScheduled
+   2. Initialized
+   3. ContainersReady 
+   4. Ready - indicate app inside the pod is running and ready to accept requests
+10. Container could be running various apps within them
+    1. A Simple script performing a job, a db service, or a large web server serving end users.
+    2. The script may take few milliseconds to get ready
+    3. The db service may tale few milliseconds to connect to db and run migration scripts
+    4. The webserver might require some seconds to powerup before serving requests
+    5. So the apps are not yet ready for those milliseconds to serve any requests
+11. W/o readiness probe, the pod continues to indicate being ready even though the underlying containers are powering up
+12. So readiness probes are important to let k8s know of the actual state of the containers
+13. If Pod is not ready k8s service will not divert request on to it because k8s service relies on pod's ready state to route traffic
+14. As developers, we know that when exactly the app is ready to serve requests
+15. So we need a way to tie up the actual app's ready state with k8s status indicating ready or not
+16. There are a few ways to do so:
+    1. HTTP test: /api/ready is responding with correct status code or not
+    2. TCP test: TCP socket is up or not
+    3. exec command: if command gets executed successfully or not
+17. Example of HTTP test readiness probe:
+```
+apiVersion: v1
+kind: Pod
+metadata:
+    name: simple-webapp
+    labels:
+        name: simple-webapp
+spec:
+    conatiners:
+    - name: simple-webapp
+      image: simple-webapp
+      ports:
+        - containerPort: 8080
+      readinessProbe:
+        httpGet: 
+            path: /api/ready
+            port: 8080
+```
+18. Example of TCP test:
+```
+readinessProbe:
+    tcpSocket:
+        port: 3306
+```
+19. Example of Exec Command test:
+```
+readinessProbe:
+    exec:
+        command:
+            - cat
+            - /app/is_ready
+```
+20. We can add additional delay to the probe considering that app might take a few more time to start and hence requires readiness probe to be tested after that time. This can be achieved by 'initialDelaySeconds':
+```
+readinessProbe:
+    httpGet: 
+        path: /api/ready
+        port: 8080
+    initialDelaySeconds: 10
+```
+21. If we wish to run the probe periodically and change the state of the container based on it. We cam achieve it by 'periodSeconds':
+```
+readinessProbe:
+    httpGet: 
+        path: /api/ready
+        port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 5
+```
+22. By default, if app is not ready after 3 attempts, the probe will stop and pod will not be sent request to. But we can configure the number of fail attempts by 'failureThreshold':
+```
+readinessProbe:
+    httpGet: 
+        path: /api/ready
+        port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    failureThreshold: 8
+```
+23. Liveness probe is very much similar as in readiness probe. But in this case the pod is killed upon failing and new instance of the pod is respawned.
+24. The configurations stay similar to readiness probe
+25. HTTP test
+```
+apiVersion: v1
+kind: Pod
+metadata:
+    name: simple-webapp
+    labels:
+        name: simple-webapp
+spec:
+    conatiners:
+    - name: simple-webapp
+      image: simple-webapp
+      ports:
+        - containerPort: 8080
+      livenessProbe:
+        httpGet: 
+            path: /api/healthy
+            port: 8080
+        initialDelaySeconds: 10
+        periodSeconds: 5
+        failureThreshold: 8
+```
+26. TCP test
+```
+livenessProbe:
+    tcpSocket:
+        port: 3306
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    failureThreshold: 8
+```
+27. Exec command test
+```
+livenessProbe:
+    exec:
+        command:
+            - cat
+            - /app/is_ready
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    failureThreshold: 8
+```
+
+### Container logging
