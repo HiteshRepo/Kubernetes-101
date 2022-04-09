@@ -147,3 +147,21 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
 2. What would happen if the application inside container on one of the PODs crashes?: The crashed container inside the pod is restarted
 3. What would happen if the application inside container on one of the PODs freezes?: New Users are impacted
 4. Update both the pods with a livenessProbe using the given spec: Refer kodekloud/readinessNliveliness/simple-webapp-2.yaml and kodekloud/readinessNliveliness/simple-webapp-1.yaml
+
+### Container logging
+1. A user - USER5 - has expressed concerns accessing the application. Identify the cause of the issue.
+   Inspect the logs of the POD: `kubectl logs -f webapp-1` - USER5 Failed to Login as the account is locked due to MANY FAILED ATTEMPTS.
+2. A user is reporting issues while trying to purchase an item. Identify the user and the cause of the issue.
+   Inspect the logs of the webapp in the POD: `kubectl logs webapp-2 simple-webapp`: USER30 Order failed as the item is OUT OF STOCK
+
+### Monitoring
+1. Let us deploy metrics-server to monitor the PODs and Nodes. Pull the git repository for the deployment files.:
+   1. git clone https://github.com/kodekloudhub/kubernetes-metrics-server.git
+   2. cd kubernetes-metrics-server/
+   3. kubectl create -f .
+2. It takes a few minutes for the metrics server to start gathering data.: `kubectl top node`
+3. Identify node consuming most CPUs: control plane
+4. Identify node consuming most Memory: control plane
+5. Identify the POD that consumes the most Memory.:`kubectl top pod` - rabbit
+6. Identify the POD that consumes the least CPU: lion
+

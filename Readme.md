@@ -787,3 +787,32 @@ livenessProbe:
 ```
 
 ### Container logging
+1. to view logs of a container: `kubectl logs -f <pod-name>` (f option is to stream logs live).
+2. if multiple containers are running in a single pod, it would ask for the container name, else it would fail: `kubectl logs -f <pod-name> <container-name>`.
+
+### Monitoring
+1. What to Monitor:
+    1. Count of nodes in cluster
+    2. Healthy nodes count
+    3. Performance metrics: CPU usage, memory, n/w and disk utilization
+    4. Pod level metrics: number of them and performance metrics of each pod
+2. Tools to integrate with k8s:
+    1. Metrics server
+    2. Prometheus
+    3. Elastic stack
+    4. Datadog
+    5. Dynatrace
+3. Heapster - Original project to enable monitoring and analytics on k8s objects - deprecated
+4. Metrics server
+    1. A trimmed down version of it
+    2. 1 Metrics server per cluster
+    3. Gets metrics from each node, pods, aggregates them and stores them
+    4. In memory monitory solution - no historical data
+5. Kubelet runs on each node
+    1. it has a sub-component called cAdvisor
+    2. cAdvisor is responsible for retrieving performance metrics and put them to kubelet API
+6. minikube enable addons metrics-server
+7. git clone https://github.com/kubernetes-incubator/metrics-server.git - download the deployment binaries
+    1. kubectl create -f deploy/1.8+/ - creates set of pods, services and roles to enable metric server to poll for performance metrics of cluster
+8. kubectl top node - to view the metrics of nodes
+9. kubectl top pod  - to view the metrics of pods
