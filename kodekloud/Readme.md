@@ -172,3 +172,13 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
 3. How many objects are in the prod environment including PODs, ReplicaSets and any other objects?: `kubectl get all --selector env=prod` - 7
 4. Identify the POD which is part of the prod environment, the finance BU and of frontend tier?: `kubectl get pods --selector env=prod --selector bu=finance --selector tier=frontend` - 5 (app-1-zzxdf)
 5. A ReplicaSet definition file is given replicaset-definition-1.yaml. Try to create the replicaset. There is an issue with the file. Try to fix it.: Refer kodekloud/poddesign/labelsAndSelectors.yaml
+
+### Rolling updates & rollbacks in Deployments
+1. Inspect the deployment and identify the number of PODs deployed by it: `kubectl describe deployment frontend` - 4
+2. What container image is used to deploy the applications?: `kubectl describe deployment frontend` - kodekloud/webapp-color:v1
+3. Inspect the deployment and identify the current strategy: `kubectl describe deployment frontend` - RollingUpdate
+4. Upgrade the application by setting the image on the deployment to kodekloud/webapp-color:v2: `kubectl set image deployment frontend simple-webapp=kodekloud/webapp-color:v2`
+5. Up to how many PODs can be down for upgrade at a time Consider the current strategy settings and number of PODs 4: `kubectl describe deployment frontend` - RollingUpdateStrategy:  25% max unavailable, 25% max surge
+6. Change the deployment strategy to Recreate. Delete and re-create the deployment if necessary. Only update the strategy type for the existing deployment.: Refer kodekloud/poddesign/simple-webapp-deployment.yaml
+7. Upgrade the application by setting the image on the deployment to kodekloud/webapp-color:v3 - `kubectl set image deployment frontend simple-webapp=kodekloud/webapp-color:v3`
+

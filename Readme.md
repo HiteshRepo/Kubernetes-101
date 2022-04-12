@@ -858,3 +858,41 @@ spec:
 ```
 8. Having one selector is enough unless further nested filtering is required.
 9. Annotations are used to record other details for informatory purposes. For details like build information, name or contact.
+
+### Rolling updates & rollbacks in Deployments
+1. When we first create a deployment, it creates a rollout.
+2. A new rollout creates a new revision.
+3. In the future, when a new deployment (of same name) is triggered, a new rollout is created with increased version.
+4. This helps us keeps track of changes made and enables us to rollback to previous version deployment.
+5. To check status of rollout: `kubectl rollout status deployment myapp-deployment`
+6. To check the history, revision and change-cause of rollout: `kubectl rollout history deployment myapp-deployment`
+7. Deployment strategies:
+   1. Recreate:
+      1. Suppose there are 5 instances of your app running
+      2. When deploying a new version, we can destroy the 5 instances of older version and then deploy 5 instances of newer version
+      3. The issue is there will be a downtime
+      4. This is majorly done during major changes, breaking changes or when backward compatibility is not possible
+      5. This is not default strategy
+   2. Rolling update
+      1. In this strategy, we do not drop all the already running instances
+      2. We drop instances by a certain percentage at a time and simultaneously spawn equal percentage of newer version pods.
+      3. This upgrade is default strategy
+      4. This has no downtime
+8. For example 
+   1. suppose there is an already existing deployment running 3 replicas of a pod with image nginx:1.7.0
+   2. now you wish to change the version of the image
+   3. this can be done by changing the version of the image in deployment file and running the command: `kubectl appy -f <deployment file path>`
+   4. this can also be done by: `kubectl set image deployment myapp-deployment nginx=nginx.1.7.1`
+   5. but if we do step #4, then there will be inconsistency in the actual file and the deployment definition in the cluster
+9. run command: `kubectl describe deployment <deployment name>` to see the details of deployment, and notice the difference in both strategies
+10. How upgrades work under the hood:
+    1. When a deployment is applied, it creates a replica-set and spins up pods with number of instances as mentioned in the deployment configuration
+    2. Then, when the deployment is re-applied with changes, it creates another replica-set and spins up pods with number of instances as mentioned in the deployment configuration and drops pod simultaneously from older replica-set.
+    3. But the thing to note is, the older replica-set still exists, which will be used for rollback if required
+11. To rollback a deployment: `kubeclt rollout undo deployment myapp-deployment` - this will also run in the similar sequence as it happened while upgrade
+12. After rollback the new replicaset still persists.
+13. Remember in order to see change cause of historical revisions, we need to add --record flag while editing/applying deployments (needs to be set once per deployment)
+14. When we do a rollback, the revision to which the rollback happens is removed from history and a new entry is made in the history instead.
+15. If any error occurs during upgrade, kubernetes will proactively stop the upgrade and stop dropping previously running instances
+
+
