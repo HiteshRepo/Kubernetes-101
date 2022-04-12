@@ -816,3 +816,45 @@ livenessProbe:
     1. kubectl create -f deploy/1.8+/ - creates set of pods, services and roles to enable metric server to poll for performance metrics of cluster
 8. kubectl top node - to view the metrics of nodes
 9. kubectl top pod  - to view the metrics of pods
+
+### Labels, Selectors and Annotations
+1. Ability to group kubernetes objects together and filter them based on needs is achieved using labels and selectors.
+2. Labels are basically properties attached to each item.
+3. Selectors help us filter kubernetes objects based on the attached properties (labels).
+4. An example of labels and selectors would be:
+   1. When we create pods, we attach some labels.
+   2. And then when we create service to redirect requests to the pods, we create selectors and matchLabels to link service and pods
+5. An example of a pod with labels is as below (here app: mock-app and function: backend are the labels):
+```
+apiVersion: v1
+kind: Pod
+metadata:
+    name: simple-webapp
+    labels:
+        app: mock-app
+        function: backend
+spec:
+    containers:
+    - name: simple-webapp
+      image: simple-webapp
+      ports:
+        - containerPort: 8080
+```
+6. After creating a pod with certain labels, we can filter it by: `kubectl get pods --selector app=mock-app`
+7. An example of a service using selector to attach itself to pods (here app: mock-app and function: backend under spec/selector are the selectors)
+```
+apiVersion: v1
+kind: Service
+metadata:
+    name: my-service
+spec:
+    selector:
+        app: mock-app
+        function: backend
+    ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 9376
+```
+8. Having one selector is enough unless further nested filtering is required.
+9. Annotations are used to record other details for informatory purposes. For details like build information, name or contact.

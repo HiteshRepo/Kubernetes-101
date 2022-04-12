@@ -165,3 +165,10 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
 5. Identify the POD that consumes the most Memory.:`kubectl top pod` - rabbit
 6. Identify the POD that consumes the least CPU: lion
 
+### Labels, Selectors and Annotations
+1. We have deployed a number of PODs. They are labelled with tier, env and bu. How many PODs exist in the dev environment?
+   Use selectors to filter the output: `kubectl get pods --selector env=dev` - 7
+2. How many PODs are in the finance business unit (bu)?: `kubectl get pods --selector bu=finance` - 6
+3. How many objects are in the prod environment including PODs, ReplicaSets and any other objects?: `kubectl get all --selector env=prod` - 7
+4. Identify the POD which is part of the prod environment, the finance BU and of frontend tier?: `kubectl get pods --selector env=prod --selector bu=finance --selector tier=frontend` - 5 (app-1-zzxdf)
+5. A ReplicaSet definition file is given replicaset-definition-1.yaml. Try to create the replicaset. There is an issue with the file. Try to fix it.: Refer kodekloud/poddesign/labelsAndSelectors.yaml
