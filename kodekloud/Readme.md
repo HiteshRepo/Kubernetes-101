@@ -182,3 +182,69 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
 6. Change the deployment strategy to Recreate. Delete and re-create the deployment if necessary. Only update the strategy type for the existing deployment.: Refer kodekloud/poddesign/simple-webapp-deployment.yaml
 7. Upgrade the application by setting the image on the deployment to kodekloud/webapp-color:v3 - `kubectl set image deployment frontend simple-webapp=kodekloud/webapp-color:v3`
 
+### Jobs
+1. There are broadly 2 types of workloads:
+   1. Longer running time workloads: DB, Services, Web-servers, etc. Manually stopped if required.
+   2. Short runtime workloads: Batch processing, analytics, reporting, etc. Stops after finishing the task.
+2. Let us create a pod definition file (simple-sum.yaml) to do some computational work
+```
+apiVersion: v1
+kind: Pod
+metadata:
+   name: math-pod
+spec:
+   containers:
+   - name: math-add
+     image: ubuntu
+     command: ['expr', '3', '+', '2']
+```
+3. now run command: `kubectl apply -f simple-sum.yaml`
+4. status of pod (kubectl get pods) changes from creating -> running -> completed
+5. But the problem is, as soon as the pod goes to completed state (since it has done with the operation), kubernetes restarts it and the cycle continues
+6. Because kubernetes wants to keep pods running forever by default. There is a property called restartPolicy which is set to Always by default
+7. We can override this property to either 'Never' or 'OnFailure'.
+8. We want to make sure that all pods doing some computational work get created and do a certain job successfully and then are dropped. For this we require a manager which is also known as a Job.
+9. ReplicaSet ensure running pods forever while Job ensures creating pods and doing assigned tasks successfully
+10. An example of Job
+```
+apiVersion: batch/v1
+kind: Job
+metadata:
+   name: math-add-job
+spec:
+   completions: 3
+   parallelism: 3
+   template: 
+      spec:
+         containers:
+         - name: math-add
+           image: ubuntu
+           command: ['expr', '3', '+', '2']
+         restartPolicy: Never
+```
+11. 'completions' is analogous to 'replicas'.
+12. If one of the pod fails, the job tries spin up pods until required completions are not meant
+13. 'parallelism' forces kubernetes to create pods for a job at the same time
+
+### CronJobs
+1. A Job that can be scheduled is called CronJob
+2. Template of CronJob is as follows:
+```
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+   name: reporting-cron-job
+spec:
+   schedule: "*/1 * * * *"
+   jobTemplate: 
+      spec:
+         completions: 3
+         parallelism: 3
+         template:
+            spec:
+               containers:
+               - name: math-add
+                 image: ubuntu
+                 command: ['expr', '3', '+', '2']
+               restartPolicy: Never
+```

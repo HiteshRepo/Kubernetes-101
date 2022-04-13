@@ -895,4 +895,8 @@ spec:
 14. When we do a rollback, the revision to which the rollback happens is removed from history and a new entry is made in the history instead.
 15. If any error occurs during upgrade, kubernetes will proactively stop the upgrade and stop dropping previously running instances
 
-
+### Job, Cron Job
+1. Create a Job using this POD definition file or from the imperative command and look at how many attempts does it take to get a '6'.: Refer kodekloud/throw-dice-job.yaml
+2. Update the job definition to run as many times as required to get 3 successful 6's: Refer kodekloud/throw-dice-job-2.yaml
+3. Update the job definition to run 3 jobs in parallel.: Refer kodekloud/throw-dice-job-3.yaml
+4. Create a CronJob for the same to be scheduled at: 21.30: Refer kodekloud/throw-dice-cronjob.yaml
