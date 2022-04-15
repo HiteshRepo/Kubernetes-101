@@ -895,8 +895,70 @@ spec:
 14. When we do a rollback, the revision to which the rollback happens is removed from history and a new entry is made in the history instead.
 15. If any error occurs during upgrade, kubernetes will proactively stop the upgrade and stop dropping previously running instances
 
-### Job, Cron Job
-1. Create a Job using this POD definition file or from the imperative command and look at how many attempts does it take to get a '6'.: Refer kodekloud/throw-dice-job.yaml
-2. Update the job definition to run as many times as required to get 3 successful 6's: Refer kodekloud/throw-dice-job-2.yaml
-3. Update the job definition to run 3 jobs in parallel.: Refer kodekloud/throw-dice-job-3.yaml
-4. Create a CronJob for the same to be scheduled at: 21.30: Refer kodekloud/throw-dice-cronjob.yaml
+
+### Jobs
+1. There are broadly 2 types of workloads:
+    1. Longer running time workloads: DB, Services, Web-servers, etc. Manually stopped if required.
+    2. Short runtime workloads: Batch processing, analytics, reporting, etc. Stops after finishing the task.
+2. Let us create a pod definition file (simple-sum.yaml) to do some computational work
+```
+apiVersion: v1
+kind: Pod
+metadata:
+   name: math-pod
+spec:
+   containers:
+   - name: math-add
+     image: ubuntu
+     command: ['expr', '3', '+', '2']
+```
+3. now run command: `kubectl apply -f simple-sum.yaml`
+4. status of pod (kubectl get pods) changes from creating -> running -> completed
+5. But the problem is, as soon as the pod goes to completed state (since it has done with the operation), kubernetes restarts it and the cycle continues
+6. Because kubernetes wants to keep pods running forever by default. There is a property called restartPolicy which is set to Always by default
+7. We can override this property to either 'Never' or 'OnFailure'.
+8. We want to make sure that all pods doing some computational work get created and do a certain job successfully and then are dropped. For this we require a manager which is also known as a Job.
+9. ReplicaSet ensure running pods forever while Job ensures creating pods and doing assigned tasks successfully
+10. An example of Job
+```
+apiVersion: batch/v1
+kind: Job
+metadata:
+   name: math-add-job
+spec:
+   completions: 3
+   parallelism: 3
+   template: 
+      spec:
+         containers:
+         - name: math-add
+           image: ubuntu
+           command: ['expr', '3', '+', '2']
+         restartPolicy: Never
+```
+11. 'completions' is analogous to 'replicas'.
+12. If one of the pod fails, the job tries spin up pods until required completions are not meant
+13. 'parallelism' forces kubernetes to create pods for a job at the same time
+
+### CronJobs
+1. A Job that can be scheduled is called CronJob
+2. Template of CronJob is as follows:
+```
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+   name: reporting-cron-job
+spec:
+   schedule: "*/1 * * * *"
+   jobTemplate: 
+      spec:
+         completions: 3
+         parallelism: 3
+         template:
+            spec:
+               containers:
+               - name: math-add
+                 image: ubuntu
+                 command: ['expr', '3', '+', '2']
+               restartPolicy: Never
+```
