@@ -187,3 +187,13 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
 2. Update the job definition to run as many times as required to get 3 successful 6's: Refer kodekloud/throw-dice-job-2.yaml
 3. Update the job definition to run 3 jobs in parallel.: Refer kodekloud/throw-dice-job-3.yaml
 4. Create a CronJob for the same to be scheduled at: 21.30: Refer kodekloud/throw-dice-cronjob.yaml
+
+### Services
+1. How many Services exist on the system? in the current(default) namespace: `kubectl get services`
+2. What is the type of the default kubernetes service?: ClusterIP
+3. What is the targetPort configured on the kubernetes service?: `kubectl describe service kubernetes`: 6443
+4. How many labels are configured on the kubernetes service?: component=apiserver and provider=kubernetes - 2
+5. How many Endpoints are attached on the kubernetes service?: 10.10.33.3:6443 - 1
+6. How many Deployments exist on the system now? in the current(default) namespace: `kubectl get deployments` - 1
+7. What is the image used to create the pods in the deployment?: `kubectl describe deployment simple-webapp-deployment` - kodekloud/simple-webapp:red
+8. Create a new service to access the web application using the service-definition-1.yaml file: Refer kodekloud/services/simple-webapp-service.yaml

@@ -962,3 +962,75 @@ spec:
                  command: ['expr', '3', '+', '2']
                restartPolicy: Never
 ```
+3. schedule “30 21 * * *” implies that this ob will run at 2130 hrs everyday.
+
+4. One thing to notice is that it has 3 ’spec’s. 
+1st spec is for CronJob itself.
+2nd spec is for Job (because CronJob is an abstraction over Job).
+3rd spec is for the underlying container.
+
+### Services
+1. Services enable communication between components within and outside the applications.
+2. Services enable applications to connect with other resources like: db pods, other services (frontend/backend)
+3. They kind of enable loose coupling b/w microservices in our application setup.
+4. Lets understand a default setup w/o services:
+   1. Our pod (lets say it is a FE app that says Hello World!) is within a K8s Node.
+   2. Node IP is 192.168.1.2, Node uses the same n/w as our system.
+   3. So our system IP will also fall in the same IP range: 192.168.1.10
+   4. But the Pod has different n/w (say 10.244.0.0).
+   5. So the Pod IP can be 10.244.0.2.
+   6. In order to access th application which runs in the Pod, we have to ssh into the Node and then do a curl http://10.244.0.2
+   7. But this is inside the K8s cluster, we need to be able to access it from our system by doing curl http://192.168.1.2.
+   8. So we need something in the middle of Node and Pod to redirect the request.
+5. This is where K8s services come into play.
+6. The K8s services are like any other K8s objects, one of the use case of services is to listen to the Node port and forward the request to a target pod port.
+7. This type of service is called a NodePort service as this service listens to a pod of Node and forwards to a pod port.
+8. ClusterIP: This type of service create a virtual IP inside the cluster to enable communication b/w sets of services within the cluster itself.
+9. LoadBalancer: This type of service distributes the load across the web servers that it caters to.
+10. A template of service looks like this:
+```
+apiVersion: v1
+kind: Service
+metadata:
+    name: my-service
+spec:
+    type: NodePort
+    ports:
+        - targetPort: 80
+          port: 80
+          nodePort: 30008
+    selector:
+        app: myapp
+        type: frontend
+```
+11. If 'port' under spec/ports is not defined, then it is defaulted to 'targetPort' under spec/ports.
+12. If 'nodePort' under spec/ports is not defined, then it is defaulted to anything in the range: 30000 to 32767
+13. The selector is used to link services to the pods.
+14. The key-value pairs under selectors should match the labels of the pod.
+15. To view services: `kubectl get services`.
+16. No we can use the port '30008' to access the app: `curl http://192.169.1.10:30008`.
+17. By default, the algorithm used is Algorithm:Random and SessionAffinity: Yes.
+18. If pods are distributed across Nodes, the K8s automatically creates service that spans nodes and maps target port to same nodePort on all nodes.
+19. Another use case for internal communication:
+    1. Suppose we have multiple frontend pods
+    2. We also have multiple backend pods
+    3. We have multiple db pods too
+    4. frontend pods needs to interact with backend pods and in turn backend pods need to interact with db pods.
+    5. Now each frontend pod do not know exactly which backend pod to connect to similar issue also exist b/w backend and db pods.
+    6. Again even if we somehow map ips, the pods are ephemeral and the ip of pods keep changing.
+    7. Hence, clusterIp services provide us a single interface that group pods together to access the pods of similar types. 
+20. A template of clusterIP service looks like this:
+```
+apiVersion: v1
+kind: Service
+metadata:
+    name: backend-service
+spec:
+    type: ClusterIP
+    ports:
+        - targetPort: 80
+          port: 80
+    selector:
+        app: myapp
+        type: backend
+```
