@@ -7,7 +7,7 @@
 2. Worker Nodes
     1. Kubelet - take request from master and fulfil them, reports to master node
     2. Docker runtime - to run containers - OCI compliant container engine, deals with container abstraction
-    3. Kube proxy - manage n/w b/w worker nodes, Assigns IP to eat pod with the help of CNI provider
+    3. Kube proxy - manage n/w b/w worker nodes, Assigns IP to each pod with the help of CNI provider
     4. Pods
 3. Flow
     1. Client sends a request - To keep infra in a particular state
@@ -135,24 +135,24 @@
     18. tty
 
 ## Replica sets
-    1. Abstraction over pods, which ensures that a particular no. of pods is always running in the cluster
-    2. Uses Reconciliation control loop -> Current state - Desired State - Observe-Diff-Act
-    3. Ensures that a pod or homogeneous set of pods are always available
-    4. Maintains desired no. of pods:
-        1. Excess pods - killed
-        2. Launch new pod - in case of fail/deleted/terminated
-    5. Associated with pods via matching labels
-    6. Labels: Key-Value pair attached to objects like pod - user defined
-    7. Selectors: Help identify objects in cluster - equality based / set based
-    8. apiVersion - apps/v1
-    9. kind - ReplicaSet
-    10. metadata - name, labels…
-    11. spec - 
-        1. replicas
-        2. selector - matchLabels - app
-        3. template - pod specification - prevents specifying separate pod yaml
-    12. Distributes pods evenly across nodes
-    13. Deleting replica set -> deletes associated pods as well
+1. Abstraction over pods, which ensures that a particular no. of pods is always running in the cluster
+2. Uses Reconciliation control loop -> Current state - Desired State - Observe-Diff-Act
+3. Ensures that a pod or homogeneous set of pods are always available
+4. Maintains desired no. of pods:
+    1. Excess pods - killed
+    2. Launch new pod - in case of fail/deleted/terminated
+5. Associated with pods via matching labels
+6. Labels: Key-Value pair attached to objects like pod - user defined
+7. Selectors: Help identify objects in cluster - equality based / set based
+8. apiVersion - apps/v1
+9. kind - ReplicaSet
+10. metadata - name, labels…
+11. spec - 
+    1. replicas
+    2. selector - matchLabels - app
+    3. template - pod specification - prevents specifying separate pod yaml
+12. Distributes pods evenly across nodes
+13. Deleting replica set -> deletes associated pods as well
 
 ## Health check probes for containers:
 These diagnostics are performed periodically - in template section of replicaset/deployments - httpGet [path] /exec [command] - initialDelaySeconds and periodSeconds
@@ -407,7 +407,7 @@ volumes:
     secretName: <secret-name>
 ```
 
-If secret is used as volume mount, each attribute in secret is creates its own file and with vaue as contents in it
+If secret is used as volume mount, each attribute in secret is creates its own file and with value as contents in it
 
 ### Docker Security
 1. Host itself runs a set of processes, docker daemon, ssh-server, etc.
