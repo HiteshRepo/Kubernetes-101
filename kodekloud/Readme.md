@@ -197,3 +197,30 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
 6. How many Deployments exist on the system now? in the current(default) namespace: `kubectl get deployments` - 1
 7. What is the image used to create the pods in the deployment?: `kubectl describe deployment simple-webapp-deployment` - kodekloud/simple-webapp:red
 8. Create a new service to access the web application using the service-definition-1.yaml file: Refer kodekloud/services/simple-webapp-service.yaml
+
+### Ingress Resources
+1. Which namespace is the Ingress Controller deployed in? - `kubectl get all -n ingress-nginx` : ingress-nginx
+2. What is the name of the Ingress Controller Deployment? - deployment.apps/ingress-nginx-controller
+3. Which namespace are the applications deployed in?: `kubectl get all -n app-space`
+4. How many applications are deployed in the app-space namespace?: No. of deployments: 3
+5. Which namespace is the Ingress Resource deployed in?: app-space
+6. What is the name of the Ingress Resource?: `kubectl get ingress -n app-space`: ingress-wear-watch
+7. What is the Host configured on the Ingress Resource?: `kubectl describe ingress ingress-wear-watch -n app-space`: Rules/Host: *
+8. What backend is the /wear path on the Ingress configured with?: wear-service:8080
+9. At what path is the video streaming application made available on the Ingress: /watch
+10. If the requirement does not match any of the configured paths what service are the requests forwarded to?: default-http-backend:80
+11. You are requested to change the URLs at which the applications are made available. Make the video application available at /stream.: Refer kodekloud/ingressnetworking/ingress-wear-watch.yaml
+12. You are requested to add a new path to your ingress to make the food delivery application available to your customers. Make the new application available at /eat.: Refer kodekloud/ingressnetworking/ingress-wear-watch.yaml
+13. Identify the namespace in which the new application (webapp-pay) is deployed.: `kubectl get all -n critical-space`
+14. What is the name of the deployment of the new application?: webapp-pay
+15. You are requested to make the new application available at /pay: Refer kodekloud/ingressnetworking/ingress-pay.yaml.
+
+### Ingress Controller
+1. create a namespace called ingress-space: `kubectl create namespace ingress-space`
+2. Create a ConfigMap object in the ingress-space: Refer kodekloud/ingressnetworking/ingress-configmap.yaml
+3. Create a ServiceAccount in the ingress-space namespace: Refer kodekloud/ingressnetworking/ingress-serviceaccount.yaml
+4. We have created the Roles and RoleBindings for the ServiceAccount. Check it out!!: `kubectl get rolebindings,clusterrolebindings -n ingress-space`
+5. Create a deployment using the file given.: Refer kodekloud/ingressnetworking/ingress-deployment.yaml
+6. Create a service following the given specs: Refer kodekloud/ingressnetworking/ingress-service.yaml
+7. Create the ingress resource to make the applications available at /wear and /watch on the Ingress service.: Refer kodekloud/ingressnetworking/ingress-wear-watch.yaml(Previous)
+8. 

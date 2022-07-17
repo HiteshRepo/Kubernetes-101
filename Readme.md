@@ -475,7 +475,7 @@ spec:
    2. An automated build tool like Jenkins uses service a/c to deploy app on the cluster
 5. To create a service a/c: `kubectl create serviceaccount <account-name>`
 6. To view all service a/c: `kubectl get service a/c`
-7. On creation of service a/c a token is created automatically: `kubectl descrive serviceaccount <acocunt-name>` - see Tokens
+7. On creation of service a/c a token is created automatically: `kubectl describe serviceaccount <acocunt-name>` - see Tokens
 8. The above token can be used by the external apps for authentication of kube-api as a bearer token.
 9. Token is stored as a secret object.
 10. To view the secret object: `kubectl describe secret <secret-name>`
@@ -1033,4 +1033,106 @@ spec:
     selector:
         app: myapp
         type: backend
+```
+
+### Ingress
+1. Take a look at why an ingress is required . Then come back here to see some configuration details.
+2. Ingress Controller:
+```
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+        name: nginx-ingress-controller
+    spec:
+        replicas: 1
+        selector:
+            matchLabels:
+                name: nginx-ingress
+        template:
+            metadata:
+                labels:
+                    name: nginx-ingress
+            spec:
+                containers:
+                    - name: nginx-ingress-controller
+                      image: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.21.0
+                args:
+                    - /nginx-ingress-controller
+                    - --configmap=$(POD_NAMESPACE)/nginx-configuration
+                env:
+                    - name: POD_NAME
+                      valueFrom:
+                        fieldRef:
+                            fieldPath: metadata.name
+                    - name: POD_NAMESPACE
+                      valueFrom:
+                        fieldRef:
+                            fieldPath: metadata.namespace
+                ports:
+                    - name: http
+                      containerPort: 80
+                    - name: https
+                      containerPort: 443
+```
+
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: nginx-configuration
+```
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+    name: nginx-ingress
+spec:
+    type: NodePort
+    ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+      name: http
+    - port: 443
+      targetPort: 443
+      protocol: TCP
+      name: https
+    selector:
+      name: nginx-ingress
+```
+
+```
+apiVersion: v1
+kind: ServiceAccount
+metadata: 
+    name: nginx-ingress-serviceaccount
+```
+3. There are four K8s objects involved in setting an ingress controller:
+   1. Deployment.
+   2. Service: To expose the Deployment.
+   3. Config Map: to feed nginx configuration data like sslprotocol, logpath, 
+   4. ServiceAccount: To apply Ingress resource configurations. The service accounts must have right set of roles, clusterroles and rolebindings configured.
+4. Ingress Resource:
+```
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    name: ingress-service
+spec:
+    rules:
+    - host: my-apparelstore.com
+      http:
+        paths:
+        - path: /app1
+          backend:
+            serviceName: app1
+            servicePort: 8080
+    - host: my-apparelstore.com
+      http:
+        paths: 
+        - path: /app2
+          backend:
+            serviceName: app2
+            servicePort: 8080
 ```
