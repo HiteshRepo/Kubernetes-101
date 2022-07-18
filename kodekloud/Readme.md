@@ -223,4 +223,22 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
 5. Create a deployment using the file given.: Refer kodekloud/ingressnetworking/ingress-deployment.yaml
 6. Create a service following the given specs: Refer kodekloud/ingressnetworking/ingress-service.yaml
 7. Create the ingress resource to make the applications available at /wear and /watch on the Ingress service.: Refer kodekloud/ingressnetworking/ingress-wear-watch.yaml(Previous)
-8. 
+
+### Network Policies
+1. Traffic Flow & Rules: Ingress & Egress
+   1. Ingress Rule : For incoming request into the component.
+   2. Egress Rule : For outgoing request from the component.
+2. Network Security:
+   1. 'All allow' rule: That allows traffic from any pod to any other pod/service within cluster. Default.
+3. Solutions that support Network Policies:
+   1. Kube-router
+   2. Calico
+   3. Romana
+   4. Weave-net
+4. Solutions that do not support Network Policies:
+   1. Flannel
+5. Show all network policy: `kubectl get networkpolicy`
+6. What type of traffic is this Network Policy configured to handle?: `kubectl describe networkpolicy <name>`
+7. Create a network policy to allow traffic from the Internal application only to the payroll-service and db-service.
+   Use the spec given below. You might want to enable ingress traffic to the pod to test your rules in the UI.: `Refer network_policy_payroll_db.yaml`
+

@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-policy
+spec:
+  podSelector:
+    matchLabels:
+      role: web
+  policyTypes:
+  - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              name: api-pod
+        - namespaceSelector:
+            matchLabels:
+              name: dev
+      ports:
+        - protocol: TCP
+          port: 5000
