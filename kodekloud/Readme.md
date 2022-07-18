@@ -242,3 +242,88 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
 7. Create a network policy to allow traffic from the Internal application only to the payroll-service and db-service.
    Use the spec given below. You might want to enable ingress traffic to the pod to test your rules in the UI.: `Refer network_policy_payroll_db.yaml`
 
+## Volumes
+1. Like dockers, pods too are transient/ephemeral.
+2. So if we store data within the pods, the data will not be available later if pod is killed.
+3. In order to have persistence, we can map pod's storage to hosts' storage in the form of volume.
+4. Example:
+   ```
+   apiVersion: v1
+   kind: Pod
+   metadata:
+      name: random-number-generator
+   spec:
+      containers:
+      - image: alpine
+        name: alpine
+        command: ["bin/sh", "-c"]
+        args: ["shuf -i 0-100 -n 1 >> /opt/number.out;"]
+        volumeMounts: 
+        - mountPath: /opt
+          name: data-volume
+      volumes:
+      - name: data-volume
+        hostPath: 
+            path: /data
+            type: Directory     
+   ```
+5. The above setup is ok for a single node.
+6. But if there are multiple nodes, it is not recommended having the above setup.
+7. Instead, usage of external cloud storage would be better choice. For example if you use EBS:
+   ```
+   volumes:
+      - name: data-volume
+        awsElasticBlockStore: 
+            volumeID: <volume-id>
+            fsType: ext4 
+   ```
+
+## Persistent Volumes
+1. When there are lots of Pods, a user has to configure volumes on all Pod definition file on all envs.
+2. Everytime changes are made, the user has to make the changes in all pods.
+3. Instead, it would be great to have a centralized management of this.
+4. Such that an admin can configure a large pool of storage and users/pods can carve out pieces from it as required.
+5. PVs are cluster-wide pool of storage volumes configured by admin.
+6. users/pods can use these volumes using PVCs.
+7. Example of PV:
+   ```
+   apiVersion: v1
+   kind: PersistentVolume
+   metadata: 
+      name: pv-vol1
+   spec:
+      accessModes:
+         - ReadWriteOnce
+      capacity:
+         storage: 1Gi
+      awsElasticBlockStore: 
+            volumeID: <volume-id>
+            fsType: ext4
+   ```
+
+## Persistent Volume Claims
+1. Admin creates a set of PVs and users create a set of PVCs.
+2. K8s binds the PVC requests and volumes based on the properties of PVCs and PVs.
+3. PVC and PV have 1-1 mapping.
+4. During the binding process, K8s tries to find PV that has same capacity, access modes, volume modes and storage class as the PVC.
+5. If there are multiple matches for a single claim, labels and selectors can be used to pinpoint.
+6. A smaller claim may get bound to larger volumes if there are no better matches and all properties match.
+7. If no PV matches the PVC, the PVC remains in pending state until newer volumes are created.
+8. Example of PVC:
+   ```
+   apiVersion: v1
+   kind: PersistentVolumeClaim
+   metadata: 
+      name: myClaim
+   spec:
+      accessModes:
+         - ReadWriteOnce
+      resources:
+         requests:
+            storage: 500 Mi
+   ```
+9. What happens if the PVC is deleted? we can choose from the following to configure 'persistentVolumeReclaimPolicy':
+   1. Retain - Default. Remain until manually deleted by Admin. Unavailable for reuse.
+   2. Delete.
+   3. Recycle - Data is scrubbed but available for reuse.
+10. Command to view a file in a pod: `kubectl exec <pod-name> -- cat <file-path>`
