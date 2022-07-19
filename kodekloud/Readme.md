@@ -358,4 +358,169 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
             storage: 500 Mi
    ```
 9. What is the name of the Storage Class that does not support dynamic volume provisioning? : local-storage
-10. 
+
+## Stateful Sets
+1. Why do we need StatefulSet? one of the use case (Master-Slave DB replica setup):
+   1. Setup master first and then slaves
+   2. Clone data from master to slave1
+   3. Enable continuous replication from master to slave1
+   4. Wait for slave1 to be ready
+   5. Clone data from slave1 to slave2
+   6. Enable continuous replication from master to slave2
+   7. Configure master address on slaves
+2. How do we achieve this in k8s?
+   1. We need the order of creation of these components (master and slaves)
+   2. First master, then slave1 and finally slave2
+   3. We cannot ensure ordering using Deployments
+   4. Also in order to enable replication and cloning of data we need to be able to differentiate master and the salves
+   5. Also in order to configure master address in slaves, we need a static address. But since pods in k8s are ephemeral, it is harder to achieve as IPs and Pod names would change.
+3. Solution (StatefulSets)
+   1. Very similar to Deployments
+   2. Pods are created in sequential manner
+   3. Assign unique ordinal number to each pod [name = <image-name>-<ordinal-number>]
+   4. If pod goes down and comes up, the name remains the same
+4. StatefulSet specifications are almost same as Deployment, except for that StatefulSet requires a service name (headless) specified
+5. Example of a StatefulSet
+   ```
+   apiVersion: v1
+   kind: StatefulSet
+   metadata: 
+      name: mysql
+      labels:
+         app: mysql
+   spec:
+      template: 
+         metadata:
+            labels:
+               app: mysql
+         spec:
+            containers:
+            - name: mysql
+              image: mysql
+      replicas: 3
+      selector:
+         matchLabels:
+            app: mysql
+      serviceName: mysql-h 
+   ```
+6. StatefulSet scales up and down in order.
+7. But the above behavior can be overridden by: podManagementPolicy: Parallel
+
+## Headless service
+1. The way to point from one pod to another is via service.
+2. When we create a headless service, it creates DNS entries for each pod in the format: <pod-name>.<headless-service-name>.<namespace>.<svc>.<cluster-domain>
+3. Headless service differentiates from a normal service by configuring ClusterIP as None
+4. Example of headless service:
+   ```
+   apiVersion: v1
+   kind: Service
+   metadata:
+      name: mysql-h
+   spec:
+      ports:
+         - port: 3306
+      selector:
+         app: mysql
+      clusterIP: None
+   ```
+5. Pod Definition to create DNS service via headless service
+   ```
+    apiVersion: v1
+    kind: Pod
+    metadata:
+       name: myapp-pod
+       labels:
+         app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql
+      subdomain: mysql-h
+      hostname: mysql-pod 
+   ```
+6. Deployment Definition to create DNS service via headless service
+   ```
+   apiVersion: v1
+   kind: Deployment
+   metadata:
+       name: mysql-deployment
+       labels:
+         app: mysql
+   spec:
+      replicas: 3
+      matchLabels:
+         app: mysql
+      template:
+         metadata:
+            name: mysql
+            labels:
+               app: mysql
+         spec:
+           containers:
+           - name: mysql
+             image: mysql
+           subdomain: mysql-h
+           hostname: mysql-pod 
+   ```
+7. StatefulSet Definition to create DNS service via headless service
+   ```
+   apiVersion: v1
+   kind: StatefulSet
+   metadata:
+       name: mysql-statefulset
+       labels:
+         app: mysql
+   spec:
+      serviceName: mysql-h
+      replicas: 3
+      selector:
+          matchLabels:
+             app: mysql
+      template:
+         metadata:
+            name: mysql
+            labels:
+               app: mysql
+         spec:
+           containers:
+           - name: mysql
+             image: mysql 
+   ```
+8. If PVC is used in a Pod, K8s creates a PV via SC and maps it to the Pod.
+9. If PVC is used in a Deployment or StatefulSet, k8s creates the configured replicas and maps each pod to same PV via SC.
+10. So in order to have different PV for each pod in a Deployment or StatefulSet, used 'volumeClaimTemplate' directly under spec of a Deployment or StatefulSet. The configuration remains same as a PVC
+11. Example of above:
+    ```
+   apiVersion: v1
+   kind: StatefulSet
+   metadata:
+      name: mysql-statefulset
+      labels:
+         app: mysql
+   spec:
+      replicas: 3
+      selector:
+         matchLabels:
+            app: mysql
+      template:
+         metadata:
+            labels:
+               app: mysql
+         spec:
+            containers:
+            - name: mysql
+              image: mysql
+              volumeMounts:
+               - mountPath: /var/lib/mysql
+                  name: data-volume
+      volumeClaimTemplate:
+      - metadata:
+         name: data-volume
+        spec:
+         accessModes:
+            - ReadWriteOnce
+         storageClassName: google-storage
+         resources: 
+            requests: 
+               storage: 500Mi
+```
