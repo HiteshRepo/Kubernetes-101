@@ -327,3 +327,35 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
    2. Delete.
    3. Recycle - Data is scrubbed but available for reuse.
 10. Command to view a file in a pod: `kubectl exec <pod-name> -- cat <file-path>`
+
+## Storage Class
+1. What happens with PVC and PV setup is that Admin creates big volume of storage so that those can be chunked into PV which thereby can be claimed via PVCs.
+2. The above process is called Static provisioning.
+3. Admin has to manually create the storage and keep tabs on it to expand when required.
+4. Storage class helps to automate this process by provisioning on-demand.
+5. Storage class helps with Dynamic provisioning.
+6. Example of SC:
+   ```
+   apiVersion: storage.k8s.io/v1
+   kind: StorageClass
+   metadata:
+      name: google-storage
+   provisioner: kubernetes.io/gce-pd
+   ```
+7. PVC can now use the storage class instead of PV.
+8. Example of PVC using SC:
+   ```
+   apiVersion: v1
+   kind: PersistentVolumeClaim
+   metadata: 
+      name: myClaim
+   spec:
+      accessModes:
+         - ReadWriteOnce
+      storageClassName: google-storage 
+      resources:
+         requests:
+            storage: 500 Mi
+   ```
+9. What is the name of the Storage Class that does not support dynamic volume provisioning? : local-storage
+10. 
