@@ -491,36 +491,53 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
 10. So in order to have different PV for each pod in a Deployment or StatefulSet, used 'volumeClaimTemplate' directly under spec of a Deployment or StatefulSet. The configuration remains same as a PVC
 11. Example of above:
     ```
-   apiVersion: v1
-   kind: StatefulSet
-   metadata:
-      name: mysql-statefulset
-      labels:
-         app: mysql
-   spec:
-      replicas: 3
-      selector:
-         matchLabels:
+      apiVersion: v1
+      kind: StatefulSet
+      metadata:
+         name: mysql-statefulset
+         labels:
             app: mysql
-      template:
-         metadata:
-            labels:
+      spec:
+         replicas: 3
+         selector:
+            matchLabels:
                app: mysql
-         spec:
-            containers:
-            - name: mysql
-              image: mysql
-              volumeMounts:
-               - mountPath: /var/lib/mysql
-                  name: data-volume
-      volumeClaimTemplate:
-      - metadata:
-         name: data-volume
-        spec:
-         accessModes:
-            - ReadWriteOnce
-         storageClassName: google-storage
-         resources: 
-            requests: 
-               storage: 500Mi
-```
+         template:
+            metadata:
+               labels:
+                  app: mysql
+            spec:
+               containers:
+               - name: mysql
+                 image: mysql
+                 volumeMounts:
+                  - mountPath: /var/lib/mysql
+                     name: data-volume
+         volumeClaimTemplate:
+         - metadata:
+            name: data-volume
+           spec:
+            accessModes:
+               - ReadWriteOnce
+            storageClassName: google-storage
+            resources: 
+               requests: 
+                  storage: 500Mi
+      ```
+
+## Define, build and modify container images
+1. Steps:
+   1. OS
+   2. Update source repository
+   3. Install dependencies
+   4. Install code dependencies using dependency management files
+   5. Copy source code to docker
+   6. Build/Compile the code to generate binaries
+   7. Copy binaries from a builder container to a new image
+   8. Copy the config files
+   9. Commands to start the app
+2. Build: docker build <Dockerfile path> -t <account-name/image-name> .
+3. Push: docker push <account-name/image-name>
+4. Format - <Instruction> <Argument>
+5. 
+
