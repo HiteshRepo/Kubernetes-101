@@ -539,5 +539,55 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
 2. Build: docker build <Dockerfile path> -t <account-name/image-name> .
 3. Push: docker push <account-name/image-name>
 4. Format - <Instruction> <Argument>
-5. 
+
+## Security Primitives
+1. Host
+   1. Root access disabled
+   2. Password based authentication disabled
+   3. SSK key based authentication
+2. kube-apiserver
+   1. Who can access the cluster? - Authentication
+      1. Files - Usernames and Passwords
+      2. Files - Usernames and Tokens
+      3. Certificates
+      4. External Authentication providers - LDAP
+      5. Service Accounts
+   2. What can they do? - Authorization
+      1. RBAC 
+      2. ABAC
+      3. Node
+      4. Webhook
+   3. Communication - TLS encryption
+   4. Pod communication - Network policies
+
+## Authentication
+1. Types of users accessing K8s cluster
+   1. Admin: To perform administrative tasks 
+   2. Developer: To deploy applications
+   3. End User: To access the applications deployed on cluster
+   4. Bots: For integration purposes
+2. Challenge: How to secure cluster by securing communication b/w internal components and management access to cluster through Authentication and Authorization mechanisms.
+3. End User Authentication is managed by applications themselves.
+4. Admin, Developers : User, Bots: ServiceAccounts
+5. Users in K8s cannot be created/managed
+   1. This cannot be done: kubectl create user user1
+   2. Nor this: kubectl get users
+6. However, this can be done:
+   1. kubectl create serviceaccount sa1
+   2. kubectl get serviceaccount
+7. User access is managed by kube-apiserver
+8. kube-apiserver authenticates the kubectl requests before processing it.
+9. Ways:
+   1. Static Password File: List usernames and passwords
+   2. Static Token File: List usernames and tokens
+   3. Certificates
+   4. Identity Services: LDAP
+10. Static Password File: 
+    1. .csv file with 3 columns: password, username, userId and group name. The file name is passed as an argument to kube-apiserver: --basic-auth-file=user-details.csv
+    2. Authenticate user by curl command: curl ..... -u "<username>:<password>"
+11. Static Token File
+    1. .csv file with 3 columns: token, username, userId and group name. The file name is passed as an argument to kube-apiserver: --token-auth-file=user-details.csv
+    2. Authenticate user by curl command: curl ..... -header "Authorization: Bearer <token>"
+12. Above mechanisms are not recommended for usage in actual envs.
+13. 
 
