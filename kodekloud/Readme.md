@@ -589,5 +589,49 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
     1. .csv file with 3 columns: token, username, userId and group name. The file name is passed as an argument to kube-apiserver: --token-auth-file=user-details.csv
     2. Authenticate user by curl command: curl ..... -header "Authorization: Bearer <token>"
 12. Above mechanisms are not recommended for usage in actual envs.
-13. 
+
+## Kubeconfig
+1. Use certificate in curl commands: 
+   ```
+      curl https://<cluster-url>:6443/api/v1/pods --key admin.key --cert admin.crt --cacert ca.crt
+   ```
+2. User certificate in kubectl commands:
+   ```
+      kubectl get pods --server <cluster-url>:6443 --client.key admin.key --client-certificate admin.crt --certificate-authority ca.crt
+   ```
+3. Prepare kubeconfig file and use in kubectl:
+   ```
+      kubectl get pods --kubeconfig <config-file-path>
+   ```
+4. By default, it looks for file at: $HOME/.kube/config. To change it set $KUBECONFIG env var.
+5. Kube config file format
+   1. Clusters: Dev, Prod, UAT, Stage, etc.
+   2. Users: Admin, Dev, Prod, etc.
+   3. Contexts: Admin@Dev, Dev@Prod, etc.
+6. Example
+   ```
+      apiVersion: v1
+      kind: Config
+      current-context: my-kube-admin@my-kube-palyground
+      clusters:
+      - name: my-kube-palyground
+        cluster:
+         cluster-authority: ca.crt [filepath] or certificate-authority-data: <base-64 encoded format of ca.crt contents>
+         server: https://my-kube-palyground:6443
+      contexts:
+      - name: my-kube-admin@my-kube-palyground
+        context:
+          cluster: my-kube-palyground
+          user: my-kube-admin
+          namespace: <namespace-name>
+      users:
+      - name: my-kube-admin
+        user:
+         client-certificate: admin.crt
+         client-key: admin.key
+   ```
+7. command to show available kubeconfig: `kubectl config view`
+8. command to show available kubeconfig of a specified file: `kubectl config view --kubeconfig=my-custom-config`
+9. command to change current context: `kubectl config use-context user@cluster`
+
 
