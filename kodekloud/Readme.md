@@ -634,4 +634,33 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
 8. command to show available kubeconfig of a specified file: `kubectl config view --kubeconfig=my-custom-config`
 9. command to change current context: `kubectl config use-context user@cluster`
 
-
+## API Groups
+1. We interact with api-server via kubectl or REST
+2. REST:
+   1. curl https://<master-cluster-url>:6443/version
+   2. curl https://<master-cluster-url>:6443/api/v1/pods
+3. Groups:
+   1. /metrics - integrate 3rd party apps with k8 metrics
+   2. /healthz - monitor health of cluster
+   3. /version - version of the cluster
+   4. /api
+   5. /apis
+   6. /logs - integrate 3rd party apps with k8 logs
+4. Core API groups (/api)
+   1. /v1 - namespaces, pods, rc, services, secrets, configmaps, PV, PVC, endpoints
+5. Named API groups (/apis) - more organized, newer feature
+   1. /apps
+      1. /v1 - /deployments, /replicasets, /statefulsets - /list, /get, /create, /watch, /delete, /update
+   2. /extensions
+   3. /networkin.k8s.io
+      1. /v1 - /networkpolicies
+   4. /storage.k8s.io
+   5. /authentication.k8s.io
+   6. /certificates.k8s.io
+      1. /v1 - /certificatesigningrequests
+6. To know which actions apis you have access to:
+   1. curl http://<cluster-url>:6443 -k
+   2. curl http://<cluster-url>:6443/apis -k
+7. If unaccessible
+   1. Specify certificate in curl
+   2. Start kube proxy
