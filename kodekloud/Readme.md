@@ -664,3 +664,98 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
 7. If unaccessible
    1. Specify certificate in curl
    2. Start kube proxy
+
+## Authorization
+1. --authorization-mode flag is used.
+   1. Multiple modes can be set, --authorization-mode=Node,RBAC,Webhook
+   2. The modes are used in sequence. If a request is denied by Node here, it is forwarded to RBAC
+2. Admins:
+   1. Viewing K8s objects.
+   2. Creating/Deleting K8s objects.
+3. Developers, ServiceAccounts also need authorized.
+4. But not all of them should have same types of access.
+5. Requirement: Varied level of access.
+6. Types of Authorization Mechanisms:
+   1. Node
+   2. ABAC - Attribute
+   3. RBAC - Role based
+   4. Webhook
+7. Node Authorizer:
+   1. Users use 'KubeAPi' [or Master node's API serve] for Management Purposes.
+   2. Similarly, Kubelets also use 'KubeAPi' for Management Purposes within cluster like
+      1. Read info about: Service, Endpoints, Nodes, Pods, etc
+      2. Write info about: Node status, Pod status, events, etc
+   3. Kubelets should be part of 'System:Nodes' group. So any requests coming from kubelets will be authorized by Node Authorizor.
+8. ABAC
+   1. Associate a user/set of user with a set of permissions.
+   2. Policy definition files needs to be created and passed to API Server.
+   3. Manual editing of files becomes a norm and restarting of API Server is a necessity.
+   4. These are difficult to manage.
+9. RBAC
+   1. Instead of associating a user/set of user with permissions a Role is defined.
+   2. These roles are then associated with user/set of users.
+   3. We simply modify the role to reflect on the associated users.
+10. Webhook
+    1. To manage authorization outside the cluster [API server].
+    2. KubeAPI is going to rely on a thrid party component to verify the access/authorization
+11. AlwaysAllow
+    1. Allows all requests w/o auth check
+    2. Default Auth mode
+12. AlwaysDeny
+    1. Denies all requests w/o auth check
+
+## RBAC
+1. Role definition file
+   ```
+   apiVersion: rbac.authorization.k8s.io/v1
+   kind: Role
+   metadata: 
+      name: developer
+   rules:
+   - apiGroups: [""] // blank apiGroups indicates core group
+     resources: ["pods"]
+     verbs: ["list", "get", "create", "update", "delete"]
+   - apiGroups: [""]
+     resources: ["configMap"]
+     verbs: ["create"]
+   ```
+2. kubectl create -f <filepath>
+3. Link role and user
+4. Role binding object
+   ```
+   apiVersion: rbac.authorization.k8s.io/v1
+   kind: RoleBinding
+   metadata: 
+      name: devuser-developer-binding
+   subjects:
+   - kind: User
+     name: dev-user
+     apiGroup: rbac.authorization.k8s.io
+   roleRef:
+      kind: Role
+      name: developer
+      apiGroup: rbac.authorization.k8s.io
+   ```
+5. kubectl create -f <filepath>
+6. View roles: kubectl get roles, kubectl describe role developer
+7. View role bindings: kubectl get rolebindings, kubectl describe rolebinding devuser-developer-binding
+8. Check Access: kubectl auth can-i create deployments / kubectl auth can-i delete nodes
+9. Check Access by Admin: kubectl auth can-i create deployments --as dev-user / kubectl auth can-i delete nodes --as dev-user
+10. Specific access:
+```
+   apiVersion: rbac.authorization.k8s.io/v1
+   kind: Role
+   metadata:
+      name: developer
+   rules:
+   - apiGroups: [""] // blank apiGroups indicates core group
+     resources: ["pods"]
+     resourceNames: ["blue", "green"]
+     verbs: ["list", "get", "create", "update", "delete"]
+   - apiGroups: [""]
+     resources: ["configMap"]
+     verbs: ["create"]
+```
+11. How to check kube-apiserver configurations?
+12. Get roles in all namespaces: `kubectl get roles --all-namespaces`
+13. 

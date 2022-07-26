@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: developer
+  namespace: blue
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "watch", "create", "delete"]
+    resourceNames: ["dark-blue-app"]
+  - apiGroups: [ "apps" ]
+    resources: [ "deployments" ]
+    verbs: [ "create" ]
