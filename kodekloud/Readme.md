@@ -989,4 +989,30 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
       9. Service Mesh is solution for this caveat
 4. Update replicas of an existing deployment: `kubectl scale deployment --replicas=1 frontend-v2`
 
+## Helm Introduction
+1. Package manager for K8s.
+2. Each helm chart is a collection of yaml files which belongs to an app.
+3. They have a config file to customize the configurations.
+4. Install helm: https://helm.sh/docs/intro/install/
+5. Identify OS: cat /etc/*release*
+6. Install helm in Ubuntu:
+   1. curl https://baltocdn.com/helm/signing.asc | apt-key add
+   2. apt-get install apt-transport-https --yes
+   3. echo "deb https://baltocdn.com/helm/stable/debian/ all main" | tee /etc/apt/sources.list.d/helm-stable-debian.list
+   4. apt-get update
+   5. apt-get install helm
+7. Concepts:
+   1. Templates
+   2. values.yaml
+   3. Templates + values.yaml -> HELM chart
+   4. chart.yaml - metadata
+   5. https://artifacthub.io/ (default), https://charts.bitnami.com/bitnami
+   6. helm search hub <chart-name> [searches in https://artifacthub.io/]
+   7. To search in https://charts.bitnami.com/bitnami:
+      1. helm repo add bitnami https://charts.bitnami.com/bitnami
+      2. helm search repo <chart-name>
+   8. helm install <release-name> <chart-name> [release name allows to install a single app under multiple releases]
+   9. helm list
+   10. helm uninstall <release-name>
+   11. helm pull --untar <chart-name> -> cd <chart-name> -> modify values.yaml -> helm install <release-name> ./<chart-name>
 
