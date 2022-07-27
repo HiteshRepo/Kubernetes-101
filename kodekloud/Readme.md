@@ -855,4 +855,37 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
     2. cat <cert file path> | base64
        cat <key file path> | base64
     3. Also can be done w/o above to steps: kubectl create secret tls webhook-server-tls --key="<cert file path>" --cert="<key file path>"
-    4. 
+
+## Api versions
+1. /v1 - GA/stable, reliable, all users
+2. /v1beta1 - has e2e, minor bugs, commitment to move to GA
+3. /v1alpha1 - lacks e2e tests, may have bugs, no commitment, users - feedback users
+
+## Api Deprecations
+1. Support multiple versions at a time.
+2. Sequence
+   1. X -> /v1alpha1
+   2. X+1 -> /v1alpha2 (#1 -> API elements may only be removed by incrementing the version of the API group) (Release notes - Mention breaking changes, notification for migration, etc)
+   3. X+2 -> /v1beta1
+   4. X+3 -> /v1beta2 and /v1beta1 [deprecated but preferred] (#2 -> API objects must be able to round trip between API versions in a given release w/o info loss, except whole REST resources that do not exist in some versions)
+   5. X+4 -> /v1beta2 [preferred] and /v1beta1 [deprecated] (#3 -> Support - GA (12 months), Beta(9 months), Alpha(0 months))
+   6. X+5 -> /v1 and /v1beta2 [deprecated but preferred] and /v1beta1 [deprecated]
+   7. X+6 -> /v1 [preferred] and /v1beta2 [deprecated]
+   8. X+7 -> /v1 [preferred] and /v1beta2 [deprecated]
+   9. X+8 -> /v1 [preferred]
+   10. X+8 -> /v1 [preferred] and /v2alpha1 (#4 -> API version in a given track may not be deprecated until a new stabel version is released)
+3. `kubectl convert` command is a separate utility to be installed
+   1. curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl-convert"
+   2. validation of downlaoded binary [optional]:
+      1. curl -LO "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl-convert.sha256"
+      2. echo "$(cat kubectl-convert.sha256) kubectl-convert" | sha256sum --check
+   3. sudo install -o root -g root -m 0755 kubectl-convert /usr/local/bin/kubectl-convert
+   4. kubectl convert --help
+4. Enable the v1alpha1 version for rbac.authorization.k8s.io API group on the controlplane node.
+   1. As a good practice, take a backup of that apiserver manifest file before going to make any changes.
+      In case, if anything happens due to misconfiguration you can replace it with the backup file: `cp -v /etc/kubernetes/manifests/kube-apiserver.yaml /root/kube-apiserver.yaml.backup`
+   2. Now, open up the kube-apiserver manifest file in the editor of your choice. It could be vim or nano: `vi /etc/kubernetes/manifests/kube-apiserver.yaml`
+   3. Add the --runtime-config flag in the command field as follows : `--runtime-config=rbac.authorization.k8s.io/v1alpha1`
+   4. usage: `kubectl convert -f ingress-old.yaml --output-version networking.k8s.io/v1`
+
+
