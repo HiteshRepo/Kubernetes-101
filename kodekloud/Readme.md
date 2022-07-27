@@ -889,3 +889,69 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
    4. usage: `kubectl convert -f ingress-old.yaml --output-version networking.k8s.io/v1`
 
 
+## Custom Resource Definitions
+1. kubectl commands -> Create, list and modify in ETCD data store
+2. Who is responsible for converting these deployments into actual pods and replicasets? -> Controller
+3. Controller -> is built-in -> continuously monitor resource states
+4. Suppose we want to create a resource like below:
+   ```
+   apiVersion: flights.com/v1
+   kind: FlightTicket
+   metadata: 
+      name: my-flight-ticket
+   spec:
+      from: Mumbai
+      to: London
+      number: 2
+   ```
+   We would like to manage the resource, like this:
+   - kubectl create -f flightticket.yaml
+   - kubectl get flightticket
+   - kubectl delete -f flightticket.yaml
+5. How to achieve?
+  - Create a custom flight ticket controller that keeps checking the ETCD for any flight ticket request.
+  - CRD
+    ```
+    apiVersion: apiextensions.k8s.io/v1
+    kind: CustomResourceDefinition
+    metadata: 
+      name: flighttickets.flights.com
+    spec:
+      scope: Namespaced
+      group: flights.com
+      names:
+         kind: FlightTicket
+         singular: flightticket
+         plural: flighttickets
+         shortnames: 
+            - ft
+      versions:
+         - name: v1
+           served: trye
+           storage: true
+      schema:
+         openAPIV3Schema: 
+            type: object
+            properties:
+               spec:
+                  type: object
+                  properties:
+                     from:
+                        type: string
+                     to:
+                        type: string
+                     number:
+                        type: integer
+                        minimum: 1
+                        maximum: 10
+    ```
+
+## Custom Controllers
+1. Deploy a code that monitors ETCD for FlightTicket resource requests and manages.
+2. Get started:
+   1. Clone repo: https://github.com/kubernetes/sample-controller
+   2. cd sample-controller
+   3. write your custom logic in controller.go
+   4. go build -o sample-controller .
+   5. ./sample-controller -kubeconfig=$HOME/.kube/config
+   6. package the sample-controller and run it as a pod
