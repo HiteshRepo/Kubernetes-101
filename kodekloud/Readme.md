@@ -792,4 +792,67 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
       apiGroup: rbac.authorization.k8s.io
    ```
 8. Cluster roles can also be used for namespaced resources as well but it will have access to all resources across namespaces
-9. 
+
+## Admission Controllers
+1. kubectl -> authentication (mostly via certificates in kubeconfig) -> authorization (mostly RBACs) -> Actions (like Create Pods)
+2. RBACs are on API level but not beyond it.
+3. What if you would want to?
+   1. Restrict images from certain registry
+   2. Do not permit container running as rootuser - `containers/0/securityContext/runAsUser: 0`
+   3. Allow certain capabilities only
+   4. Metadata must conatins labels
+4. Admission controllers helps us better security measures
+5. kubectl -> authentication -> authorization -> Admission Controllers -> Actions (like Create Pods)
+6. In built admission controllers
+   1. AlwaysPullImages - always pulls image on Pod creation
+   2. DefaultStorageClass - observes creation of PVCs and assigns SCs even if it is not specified
+   3. EventRateLimit - requests api server can handle at a time
+   4. NamespaceExists - rejects requests to namespaces that do not exist
+   5. NamespaceAutoProvision - not enabled by default
+7. `kube-apiserver -h | grep enable-admission-plugins` - list of admission controllers enabled
+8. To add admission controllers - /etc/kubernetes/manifests/kube-apiserver.yaml - kubeadm
+9. --disable-admission-plugins, --enable-admission-plugins flags
+10. Which admission controller is enabled in this cluster which is normally disabled? : `kubectl -n kube-system describe po kube-apiserver-controlplane`
+11. Note that the NamespaceExists and NamespaceAutoProvision admission controllers are deprecated and now replaced by NamespaceLifecycle admission controller.
+    The NamespaceLifecycle admission controller will make sure that requests to a non-existent namespace is rejected and that the default namespaces such as default, kube-system and kube-public cannot be deleted.
+12. Since the kube-apiserver is running as pod you can check the process to see enabled and disabled plugins: ps -ef | grep kube-apiserver | grep admission-plugins
+13. Types of admission controllers:
+    1. Validating admission controller: NamespaceExists, etc - They just accept/reject requests
+    2. Mutating admission controller: DefaultStorageClass, etc - They change requests
+14. Some admission controllers can do both validation and mutation
+15. Sequence of admission controllers is also important - NamespaceAutoProvision, NamespaceExists
+16. MutatingAdmissionWebhook, ValidatingAdmissionWebhook
+17. Admission webhook server - contains our logic to be deployed and then configure k8s cluster with webhook config object
+18. Steps
+    1. Deploy webhook server - validate and mutate functions
+    2. Containerize with k8s cluster - webhook service
+    3. configure k8s cluster with our webhook server via ''
+       ```
+       apiVersion: admissionregistration.k8s.io/v1
+       kind: ValidatingWebhookConfiguration
+       metadata:
+         name: "pod-policy.example.com"
+       webhooks: 
+       - name: "pod-policy.example.com"
+         clientConfig: 
+            url: "https://external-server.example.com" // if deployed externally
+            service: // if deployed internally
+               namespace: "webhook-namespace"
+               name: "webhook-service"
+            caBundle: "njjl;kd;k"  // for tls
+         rules: // when to call
+         - apiGroups: [""]
+           apiVersions: ["v1"]
+           operations: ["CREATE"]
+           resources: ["pods"]
+           scope: "Namespaced"
+       ```
+19. Create TLS secret webhook-server-tls for secure webhook communication in webhook-demo namespace.
+    We have already created below cert and key for webhook server which should be used to create secret.
+    Certificate : /root/keys/webhook-server-tls.crt
+    Key : /root/keys/webhook-server-tls.key
+    1. Refer -> admission-controllers/webhook-server-tls-secret.yaml
+    2. cat <cert file path> | base64
+       cat <key file path> | base64
+    3. Also can be done w/o above to steps: kubectl create secret tls webhook-server-tls --key="<cert file path>" --cert="<key file path>"
+    4. 
