@@ -955,3 +955,9 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
    4. go build -o sample-controller .
    5. ./sample-controller -kubeconfig=$HOME/.kube/config
    6. package the sample-controller and run it as a pod
+
+## Operator framework
+1. CRD and Custom controllers can be packaged together as a Operator framework and deployed.
+2. Popular operator: ETCD operator -> EtcdCluster CRD + ETCD controller , EtcdBackup + Backup Operator, EtcdRestore + Restore operator
+3. Operator available at: operatorhub.io
+
