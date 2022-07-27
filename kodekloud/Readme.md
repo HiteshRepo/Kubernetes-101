@@ -961,3 +961,32 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
 2. Popular operator: ETCD operator -> EtcdCluster CRD + ETCD controller , EtcdBackup + Backup Operator, EtcdRestore + Restore operator
 3. Operator available at: operatorhub.io
 
+
+## Deployment strategies: Blue Green and Canary
+1. Already discussed: Recreate and RollingUpdate(default)
+2. Blue Green:
+   1. Newer version (Green) is deployed along older version (Blue)
+   2. 100% traffic on Blue
+   3. Switch traffic to Green all at once
+   4. Better inplemented with service mesh like ISTIO
+   5. Steps
+      1. Already have Deployment1 (label = version:v1) and Service1 (selector = version:v1)
+      2. New deployment Deployment2 (label = version:v2) and Service1 (selector = version:v2)
+3. Canary:
+   1. Newer version (Green) is deployed along older version (Blue)
+   2. Route small % of traffic - majority traffic to older
+   3. Run tests on new
+   4. Upgrade original with newer version
+   5. Steps:
+      1. Already have Deployment1 (label = version:v1) and Service1 (selector = version:v1)
+      2. New deployment Deployment2 (label = version:v2 and app:FE)
+      3. Update older deployment Deployment1 (label = version:v1 and app:FE)
+      4. Update Service1 (selector = app:FE) -> But traffic is equally divided
+      5. Reduce the Newer deployment pods to as required, so that traffic is divided as required
+      6. After tests, Update older deployment Deployment1 with new image version (label = version:v2)
+      7. Update Service1 (selector = version:v2)
+      8. Caveat: Traffic split is governed by number of pods
+      9. Service Mesh is solution for this caveat
+4. Update replicas of an existing deployment: `kubectl scale deployment --replicas=1 frontend-v2`
+
+
