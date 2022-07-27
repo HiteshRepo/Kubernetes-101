@@ -758,4 +758,38 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
 ```
 11. How to check kube-apiserver configurations?
 12. Get roles in all namespaces: `kubectl get roles --all-namespaces`
-13. 
+
+## Cluster roles
+1. Role and Role bindings can be created only within a namespace.
+2. But for resources like Nodes, PV, certificatesigningrequests, namespaces, etc cannot be associated with a namespace, they are cluster wide resources.
+3. Cluster Scoped
+4. View namespaced resources: `kubectl api-resources --namespaced=true`
+5. View cluster scoped resources: `kubectl api-resources --namespaced=false`
+6. ClusterRoles - similar to roles
+   ```
+   apiVersion: rbac.authorization.k8s.io/v1
+   kind: ClusterRole
+   metadata:
+      name: cluster-administrator
+   rules:
+   - apiGroups: [""]
+     resources: ["nodes"]
+     verbs: ["list", "get", "create", "update", "delete"]
+   ```
+7. ClusterRoleBindings - similar to role bindings
+   ```
+   apiVersion: rbac.authorization.k8s.io/v1
+   kind: ClusterRoleBinding
+   metadata: 
+      name: cluster-admin-binding
+   subjects:
+   - kind: User
+     name: cluster-admin
+     apiGroup: rbac.authorization.k8s.io
+   roleRef:
+      kind: ClusterRole
+      name: cluster-administrator
+      apiGroup: rbac.authorization.k8s.io
+   ```
+8. Cluster roles can also be used for namespaced resources as well but it will have access to all resources across namespaces
+9. 
