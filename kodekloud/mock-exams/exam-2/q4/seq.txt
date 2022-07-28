@@ -1,0 +1,4 @@
+1. kubectl get service
+2. kubectl describe service my-video-service
+3. kubectl apply -f ingress.yaml
+4. curl -v http://ckad-mock-exam-solution.com:30093/video

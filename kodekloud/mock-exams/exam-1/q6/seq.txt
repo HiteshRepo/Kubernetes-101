@@ -1,0 +1,1 @@
+kubectl -n marketing expose deployment redis --name messaging-service --port 6379 --target-port 6379

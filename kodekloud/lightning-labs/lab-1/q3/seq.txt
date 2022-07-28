@@ -1,0 +1,10 @@
+1. kubectl get pods
+2. kubectl get services
+3. kubectl exec -it webapp-color -- sh
+4. check if you are bale to connect to service: nc -z -v -w 1 secure-service 80
+5. kubectl get netpol
+6. kubectl describe netpol default-deny
+7. kubectl get netpol default-deny -o yaml > netpol.yaml
+8. kubectl apply -f netpol.yaml
+9. kubectl exec -it webapp-color -- sh
+10. check if you are bale to connect to service: nc -z -v -w 1 secure-service 80

@@ -1,0 +1,2 @@
+1. cat throw-a-dice.yaml
+2. kubectl create -f cronjob.yaml

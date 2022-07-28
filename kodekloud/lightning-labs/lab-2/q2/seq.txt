@@ -1,0 +1,14 @@
+1. kubectl get pods --all-namespaces -> nginx1401 of dev1401 namespace is not in running state
+2. kubectl -n dev1401 get pod nginx1401 -o yaml > pod.yaml
+3. nano pod.yaml
+4. changes readiness probe port to 9080
+5. create a liveness probe
+    livenessProbe:
+        exec:
+            command:
+                - ls
+                - /var/www/html/file_check
+            initialDelaySeconds: 10
+            periodSeconds: 60
+6. kubectl delete pod nginx1401 -n dev1401
+7. kubectl create -f pod.yaml

@@ -1,0 +1,5 @@
+Create a new ConfigMap named cm-3392845. Use the spec given on the below.
+ConfigName Name: cm-3392845
+Data: DB_NAME=SQL3322
+Data: DB_HOST=sql322.mycompany.com
+Data: DB_PORT=3306

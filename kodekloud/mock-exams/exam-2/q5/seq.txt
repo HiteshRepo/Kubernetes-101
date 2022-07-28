@@ -1,0 +1,9 @@
+1. kubectl get pods
+2. kubectl get pod pod-with-rprobe -o yaml > pod.yaml
+3. add readinessprobe
+    readinessProbe:
+        httpGet:
+            path: /ready
+            port: 8080
+4. kubectl delete pod pod-with-rprobe
+5. kubectl apply -f pod.yaml

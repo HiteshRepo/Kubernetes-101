@@ -1,0 +1,5 @@
+1. kubectl get pods
+2. kubectl get pod app-sec-kff3345 -o yaml > pod.yaml
+3. add securityContext: runAsUser: 0 and add capabilities: ["SYS_TIME"]
+4. kubectl delete pod app-sec-kff3345
+5. kubectl create -f pod.yaml

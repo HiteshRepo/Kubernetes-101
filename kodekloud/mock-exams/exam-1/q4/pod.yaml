@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: messaging
+  labels:
+    tier: msg
+spec:
+  containers:
+    - name: nginx-448839
+      image: redis:alpine

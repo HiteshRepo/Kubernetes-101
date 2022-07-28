@@ -1,0 +1,3 @@
+1. kubectl get pods --all-namespaces
+2. kubectl describe -n e-commerce pod e-com-1123
+3. kubectl logs -n e-commerce e-com-1123 > /opt/outputs/e-com-1123.logs

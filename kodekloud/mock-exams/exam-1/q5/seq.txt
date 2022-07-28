@@ -1,0 +1,6 @@
+1. kubectl get rs
+2. kubectl describe rs rs-d33393
+3. kubectl get rs rs-d33393 -o yaml > rs.yaml
+4. correct the name of image to 'busybox'
+5. kubectl delete rs rs-d33393
+6. kubectl create -f rs.yaml

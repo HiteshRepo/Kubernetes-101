@@ -1,0 +1,2 @@
+Apply a label app_type=beta to node controlplane. Create a new deployment called beta-apps with image: nginx and replicas: 3. Set Node Affinity to the deployment to place the PODs on controlplane only.
+NodeAffinity: requiredDuringSchedulingIgnoredDuringExecution

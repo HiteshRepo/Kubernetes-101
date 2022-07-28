@@ -1,0 +1,1 @@
+1. kubectl create -f my-busybox.yaml

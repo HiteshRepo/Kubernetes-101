@@ -1,0 +1,4 @@
+1. kubectl get pods
+2. kubectl get pod webapp-color -o yaml > pod.yaml
+3. kubectl delete pod webapp-color
+4. kubectl create -f pod.yaml

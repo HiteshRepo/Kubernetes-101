@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: time-check
+  namespace: dvl1987
+  labels:
+    run: time-check
+spec:
+  containers:
+    - name: time-check
+      image: busybox
+      env:
+        - name: TIME_FREQ
+          valueFrom:
+            configMapKeyRef:
+              key: TIME_FREQ
+              name: ti
+      command:
+        - /bin/sh
+        - -c
+        - while true; do date; sleep $TIME_FREQ; done;
+      volumeMounts:
+        - mountPath: /opt/time
+          name: a-volume
+  volumes:
+    - name: a-volume
+      emptyDir: {}
+

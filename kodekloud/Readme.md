@@ -1015,4 +1015,11 @@ Refer kodekloud/multiontainer/elastic-stack/app.yaml
    9. helm list
    10. helm uninstall <release-name>
    11. helm pull --untar <chart-name> -> cd <chart-name> -> modify values.yaml -> helm install <release-name> ./<chart-name>
+   12. helm repo list
+8. Install drupal helm chart from the bitnami repository.
+   Release name should be bravo.
+   Chart name should be bitnami/drupal.
+   1. Run the command: helm install bravo bitnami/drupal and after that run the helm list command to verify it's installation.
+9. Uninstall the drupal helm package which we installed earlier.: helm uninstall bravo
+10. 
 

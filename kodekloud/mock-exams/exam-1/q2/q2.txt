@@ -1,0 +1,1 @@
+1. create a namespace names 'apx-z99385' -> `kubectl create ns apx-z993845`

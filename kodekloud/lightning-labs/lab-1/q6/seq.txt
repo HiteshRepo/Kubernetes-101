@@ -1,0 +1,2 @@
+1. kubectl get configmap
+2. kubectl apply -f deployment.yaml

@@ -1,0 +1,5 @@
+1. kubectl describe service video-service
+2. kubectl describe service apparel-service
+3. kubectl apply -f ingress.yaml
+4. curl -v http://watch.ecom-store.com:30093/video
+5. curl -v http://apparels.ecom-store.com:30093/wear

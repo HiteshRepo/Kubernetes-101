@@ -1,0 +1,3 @@
+1. kubectl describe pod dev-pod-dind-878516
+2. inspect log-x pod
+3. kubectl logs dev-pod-dind-878516 -c log-x | grep WARN > /opt/dind-878516_logs.txt

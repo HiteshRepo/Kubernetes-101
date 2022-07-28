@@ -1,0 +1,3 @@
+Create a Pod called sega with two containers:
+Container 1: Name tails with image busybox and command: sleep 3600.
+Container 2: Name sonic with image nginx and Environment variable: NGINX_PORT with the value 8080.

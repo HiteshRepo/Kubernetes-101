@@ -1,0 +1,1 @@
+Deploy a pod named nginx-448839 using the nginx:alpine image.

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: log-volume
+spec:
+  accessModes:
+    - ReadWriteMany
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  hostPath:
+    path: /opt/volume/nginx
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: manual

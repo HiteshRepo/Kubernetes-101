@@ -1,0 +1,3 @@
+We have deployed a new pod called pod-with-rprobe. This Pod has an initial delay before it is Ready. Update the newly created pod pod-with-rprobe with a readinessProbe using the given spec
+httpGet path: /ready
+httpGet port: 8080
