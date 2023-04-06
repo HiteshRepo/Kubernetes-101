@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: lm-1
+  namespace: one
+spec:  
+  limits:
+  - max:
+      memory: "500Mi"
+    min:
+      memory: "100Mi"
+    type: Container
