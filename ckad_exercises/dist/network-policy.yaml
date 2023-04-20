@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-network-policy
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: services-nginx-deploy
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              access: granted
+      ports:
+        - protocol: TCP
+          port: 80
