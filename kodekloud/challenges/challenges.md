@@ -4,7 +4,7 @@ In this post we shall solve the challenges section of `CKAD` course by [KodeKlou
 
 Below is the architecture asked to deploy
 
-![Architecture](github.com/hiteshrepo/kubernetes-101/kodekloud/challenges/challenge-1/dist/architecture.png)
+![Architecture](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-1/dist/architecture.png)
 
 Since the question says that the PersistentVolume `jekyll-site` has already created, so lets verify:
 
@@ -27,7 +27,8 @@ Lets start by deploying/creating other components of the architecture. We will t
 
 Lets deploy PersistentVolumeClaim `jekyll-site` first.
 Below are the requirements:
-![PersistentVolumeClaim](github.com/hiteshrepo/kubernetes-101/kodekloud/challenges/challenge-1/dist/pvc.png)
+
+![PersistentVolumeClaim](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-1/dist/pvc.png)
 
 We will require the `storageClassName` of the PersistentVolume to which we want to attach the PersistentVolumeClaim.
 So that would be: 
@@ -76,7 +77,8 @@ And the `CLAIM` of PersistentVolume says it is bound to `development/jekyll-site
 
 Lets create and deploy Role `developer-role`
 Below are the requirements:
-![Role](github.com/hiteshrepo/kubernetes-101/kodekloud/challenges/challenge-1/dist/role.png)
+
+![Role](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-1/dist/role.png)
 
 The manifest `role.yaml` would look like this:
 
@@ -108,7 +110,8 @@ development-role   2023-08-12T06:48:01Z
 
 Lets create and deploy RoleBinding `developer-rolebinding`
 Below are the requirements:
-![Role Binding](github.com/hiteshrepo/kubernetes-101/kodekloud/challenges/challenge-1/dist/role-binding.png)
+
+![Role Binding](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-1/dist/role-binding.png)
 
 The manifest `binding.yaml` would look like this:
 
@@ -144,7 +147,8 @@ developer-rolebinding   Role/developer-role   30s   martin
 
 Now lets create the Pod `jekyll`
 Below are the requirements:
-![Jekyll Pod](github.com/hiteshrepo/kubernetes-101/kodekloud/challenges/challenge-1/dist/jekyll-pod.png)
+
+![Jekyll Pod](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-1/dist/jekyll-pod.png)
 
 Lets use imperative commands to generate the Pod manifest:
 
@@ -203,7 +207,8 @@ jekyll   1/1     Running   0          33s
 
 Now lets create the Service `jekyll`
 Below are the requirements:
-![Jekyll service](github.com/hiteshrepo/kubernetes-101/kodekloud/challenges/challenge-1/dist/jekyll-svc.png)
+
+![Jekyll service](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-1/dist/jekyll-svc.png)
 
 Lets use imperative commands to generate the Service manifest:
 
@@ -252,9 +257,10 @@ curl -v http://10.109.111.12:8080 # should give 200 OK
 
 Now lets update the `kube-config` file to add user `martin` and a new context `developer`.
 Below are the requirements:
-![Kube Config](github.com/hiteshrepo/kubernetes-101/kodekloud/challenges/challenge-1/dist/kube-config.png)
 
-![Martin](github.com/hiteshrepo/kubernetes-101/kodekloud/challenges/challenge-1/dist/user-martin.png)
+![Kube Config](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-1/dist/kube-config.png)
+
+![Martin](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-1/dist/user-martin.png)
 
 The diff of `kube-config` file would be as below:
 ```yaml
