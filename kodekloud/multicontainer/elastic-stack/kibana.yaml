@@ -12,3 +12,29 @@ spec:
       env:
         - name: ELASTICSEARCH_URL
           value: http://elasticsearch:9200
+      volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access-v4pln
+          readOnly: true
+      ports:
+        - containerPort: 5601
+          protocol: TCP
+  volumes:
+    - name: kube-api-access-fwm2x
+      projected:
+        defaultMode: 420
+        sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+                - key: ca.crt
+                  path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+                - fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+                  path: namespace

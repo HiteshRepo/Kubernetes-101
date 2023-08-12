@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vote-service
+  namespace: vote
+spec:
+  type: NodePort
+  ports:
+    - targetPort: 80
+      nodePort: 31000
+      port: 5000
+  selector:
+    app: vote-pod

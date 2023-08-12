@@ -14,15 +14,16 @@ spec:
           valueFrom:
             configMapKeyRef:
               key: TIME_FREQ
-              name: ti
+              name: time-config
       command:
-        - /bin/sh
-        - -c
-        - while true; do date; sleep $TIME_FREQ; done;
+        [
+          "/bin/sh",
+          "-c",
+          "while true; do date; sleep $TIME_FREQ; done > /opt/time/time-check.log",
+        ]
       volumeMounts:
         - mountPath: /opt/time
           name: a-volume
   volumes:
     - name: a-volume
       emptyDir: {}
-

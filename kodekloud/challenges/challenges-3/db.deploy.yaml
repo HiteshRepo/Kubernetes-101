@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-deployment
+  namespace: vote
+spec:
+  selector:
+    matchLabels:
+      app: db-pod
+  template:
+    metadata:
+      labels:
+        app: db-pod
+    spec:
+      containers:
+        - name: db-app
+          image: postgres:9.4
+          env:
+            - name: POSTGRES_HOST_AUTH_METHOD
+              value: trust
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: db-data
+          emptyDir: {}

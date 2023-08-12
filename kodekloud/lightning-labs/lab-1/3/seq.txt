@@ -1,0 +1,4 @@
+1. kubectl get namespace
+2. kubectl create ns dvl1987
+3. kubectl -n dvl1987 create configmap time-config --from-literal=TIME_FREQ=10
+4. k capply -f pod.yaml

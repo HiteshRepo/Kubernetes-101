@@ -1,6 +1,6 @@
 1. kubectl create -f deployment.yaml
 2. kubectl set image deployment nginx-deploy nginx=nginx:1.17
-3. kubectl describe deployment nginx-deploy | grep -i image
+3. kubectl describe deployment nginx-deploy | grep -i image --> nginx:1.17
 4. kubectl rollout history deployment nginx-deploy
 5. kubectl rollout undo  deployment nginx-deploy
-6. kubectl describe deployment nginx-deploy | grep -i image
+6. kubectl describe deployment nginx-deploy | grep -i image --> nginx:1.16  

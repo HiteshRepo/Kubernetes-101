@@ -9,3 +9,34 @@ spec:
   containers:
     - name: elastic-search
       image: docker.elastic.co/elasticsearch/elasticsearch:6.4.2
+      env:
+        - name: discovery.type
+          value: single-node
+      ports:
+        - containerPort: 9200
+          protocol: TCP
+        - containerPort: 9300
+          protocol: TCP
+      volumeMounts:
+        - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          name: kube-api-access-fwm2x
+          readOnly: true
+  volumes:
+    - name: kube-api-access-fwm2x
+      projected:
+        defaultMode: 420
+        sources:
+          - serviceAccountToken:
+              expirationSeconds: 3607
+              path: token
+          - configMap:
+              items:
+                - key: ca.crt
+                  path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+                - fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+                  path: namespace
