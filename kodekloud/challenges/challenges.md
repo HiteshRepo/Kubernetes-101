@@ -643,3 +643,322 @@ vote-service     NodePort    10.99.180.188   <none>        5000:31000/TCP   32m
 We have deployed all the components.
 
 Finally check your answer.
+
+## Challenge - 4
+
+Below is the architecture asked to deploy
+
+![Architecture](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-4/dist/architecture.png)
+
+Lets create the persistent volumes.
+
+There are 6 PersistentVolume resources that needs to deployed and all of them similar specifications except for name and path.
+
+Lets create a single manifest to create all the PVs together.
+Below are the requirements:
+
+![Redis-1](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-4/dist/redis01.png)
+
+![Redis-2](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-4/dist/redis02.png)
+
+![Redis-3](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-4/dist/redis03.png)
+
+![Redis-4](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-4/dist/redis04.png)
+
+![Redis-5](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-4/dist/redis05.png)
+
+![Redis-6](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-4/dist/redis06.png)
+
+
+The manifest `pvs.yaml` would like this:
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis01
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  hostPath:
+    path: /redis01
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis02
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  hostPath:
+    path: /redis02
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis03
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  hostPath:
+    path: /redis03
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis04
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  hostPath:
+    path: /redis04
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis05
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  hostPath:
+    path: /redis05
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis06
+spec:
+  accessModes:
+  - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  hostPath:
+    path: /redis06
+```
+
+lets create and verify the persistent volumes:
+
+```sh
+# create
+kubectl apply -f pvs.yaml 
+
+persistentvolume/redis01 created
+persistentvolume/redis02 created
+persistentvolume/redis03 created
+persistentvolume/redis04 created
+persistentvolume/redis05 created
+persistentvolume/redis06 created
+
+# verify
+kubectl get pv
+
+NAME      CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM   STORAGECLASS   REASON   AGE
+redis01   1Gi        RWO            Retain           Available                                   52s
+redis02   1Gi        RWO            Retain           Available                                   52s
+redis03   1Gi        RWO            Retain           Available                                   52s
+redis04   1Gi        RWO            Retain           Available                                   52s
+redis05   1Gi        RWO            Retain           Available                                   52s
+redis06   1Gi        RWO            Retain           Available                                   52s
+```
+
+Now lets create the `redis-cluster-service` service before stateful set because stateful set requires a service name.
+Below are the requirements:
+
+![Redis Cluster Service](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-4/dist/redis-service.png)
+
+The manifest `redis-svc.yaml` would look like this:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cluster-service
+spec:
+  clusterIP: None
+  ports:
+  - name: client
+    targetPort: 6379
+    port: 6379
+  - name: gossip
+    targetPort: 16379
+    port: 16379
+```
+
+create and validate the service
+
+```sh
+# create
+kubectl apply -f redis-svc.yaml 
+
+service/redis-cluster-service created
+
+# validate
+kubectl get svc
+
+NAME                    TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)              AGE
+kubernetes              ClusterIP   10.96.0.1    <none>        443/TCP              3h22m
+redis-cluster-service   ClusterIP   None         <none>        6379/TCP,16379/TCP   6s
+```
+
+Now lets create the `redis-cluster` stateful-set
+
+Below are the requirements:
+
+![Redis Cluster](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-4/dist/statefulset.png)
+
+The manifest `statefulset.yaml` would look like this:
+
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-cluster
+spec:
+  selector:
+    matchLabels:
+      app: redis-cluster
+  serviceName: redis-cluster-service
+  replicas: 6
+  template:
+    metadata:
+      name: redis-cluster
+      labels:
+        app: redis-cluster
+    spec:
+      containers:
+      - image: redis:5.0.1-alpine
+        name: redis
+        command: ["/conf/update-node.sh", "redis-server", "/conf/redis.conf"]
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        ports:
+        - containerPort: 6379
+          name: client
+        - containerPort: 16379
+          name: gossip
+        volumeMounts:
+        - name: conf
+          mountPath: /conf
+          readOnly: false
+        - name: data
+          mountPath: /data
+          readOnly: false
+      volumes:
+      - name: conf
+        configMap:
+          name: redis-cluster-configmap
+          defaultMode: 0755
+  volumeClaimTemplates:
+    - metadata:
+       name: data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+
+```
+
+create and validate the stateful set
+
+```sh
+# create
+kubectl apply -f statefulset.yaml
+
+statefulset.apps/redis-cluster created
+
+# validate
+kubectl get po
+NAME              READY   STATUS    RESTARTS   AGE
+redis-cluster-0   1/1     Running   0          23s
+redis-cluster-1   1/1     Running   0          18s
+redis-cluster-2   1/1     Running   0          15s
+redis-cluster-3   1/1     Running   0          12s
+redis-cluster-4   1/1     Running   0          9s
+redis-cluster-5   1/1     Running   0          6s
+```
+
+execute command as mentioned in `redis-cluster-config`
+
+![Redis Cluster Config](https://github.com/HiteshRepo/Kubernetes-101/blob/master/kodekloud/challenges/challenge-4/dist/validate.png)
+
+```sh
+kubectl exec -it redis-cluster-0 -- redis-cli --cluster create --cluster-replicas 1 $(kubectl get pods -l app=redis-cluster -o jsonpath='{range.items[*]}{.status.podIP}:6379 {end}')
+
+>>> Performing hash slots allocation on 6 nodes...
+Master[0] -> Slots 0 - 5460
+Master[1] -> Slots 5461 - 10922
+Master[2] -> Slots 10923 - 16383
+Adding replica 10.244.192.4:6379 to 10.244.192.1:6379
+Adding replica 10.244.192.5:6379 to 10.244.192.2:6379
+Adding replica 10.244.192.6:6379 to 10.244.192.3:6379
+M: 17c25a0bd004f2372c74cf8d9e56b1c70946fd54 10.244.192.1:6379
+   slots:[0-5460] (5461 slots) master
+M: 98c0922e0a13d3efa9377f3f76c878da843f8a1e 10.244.192.2:6379
+   slots:[5461-10922] (5462 slots) master
+M: 37ff6f3eb0aca87682296e4bd09d96cd4b88cacb 10.244.192.3:6379
+   slots:[10923-16383] (5461 slots) master
+S: 86ae291916b863e0cd5b132579eaf9f33343fa59 10.244.192.4:6379
+   replicates 17c25a0bd004f2372c74cf8d9e56b1c70946fd54
+S: 83e503793a6845e776211df61d274b98bc1a5837 10.244.192.5:6379
+   replicates 98c0922e0a13d3efa9377f3f76c878da843f8a1e
+S: d889b408104efba53a9800d8eb8944e193008a04 10.244.192.6:6379
+   replicates 37ff6f3eb0aca87682296e4bd09d96cd4b88cacb
+Can I set the above configuration? (type 'yes' to accept): yes
+>>> Nodes configuration updated
+>>> Assign a different config epoch to each node
+>>> Sending CLUSTER MEET messages to join the cluster
+Waiting for the cluster to join
+........
+>>> Performing Cluster Check (using node 10.244.192.1:6379)
+M: 17c25a0bd004f2372c74cf8d9e56b1c70946fd54 10.244.192.1:6379
+   slots:[0-5460] (5461 slots) master
+   1 additional replica(s)
+S: d889b408104efba53a9800d8eb8944e193008a04 10.244.192.6:6379
+   slots: (0 slots) slave
+   replicates 37ff6f3eb0aca87682296e4bd09d96cd4b88cacb
+M: 98c0922e0a13d3efa9377f3f76c878da843f8a1e 10.244.192.2:6379
+   slots:[5461-10922] (5462 slots) master
+   1 additional replica(s)
+S: 83e503793a6845e776211df61d274b98bc1a5837 10.244.192.5:6379
+   slots: (0 slots) slave
+   replicates 98c0922e0a13d3efa9377f3f76c878da843f8a1e
+S: 86ae291916b863e0cd5b132579eaf9f33343fa59 10.244.192.4:6379
+   slots: (0 slots) slave
+   replicates 17c25a0bd004f2372c74cf8d9e56b1c70946fd54
+M: 37ff6f3eb0aca87682296e4bd09d96cd4b88cacb 10.244.192.3:6379
+   slots:[10923-16383] (5461 slots) master
+   1 additional replica(s)
+[OK] All nodes agree about slots configuration.
+>>> Check for open slots...
+>>> Check slots coverage...
+[OK] All 16384 slots covered.
+```
+
+We have deployed all the components.
+
+Finally check your answer.
